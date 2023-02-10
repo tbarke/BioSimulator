@@ -4,26 +4,30 @@ import numpy as np
 
 class cell(object):
 #cell attributes: A receptors, B receptors, A molecules, B molecules, Bound A receptors, and Bound B receptors
-    biomassDivide = 10
-    AbsorbtionRate = 1.0
-    ReceptorConsumptionRate = 0.10
-    survivalCost = 2 #ATP
-    VelocityMultiplier = 1.0
-    mutate = True
-    decisiontype = "naive"
-    noise = 0
-    receptor_mode = "simulate"
-    def __init__(self, Arec, Brec, MaxReceptors, Amol, Bmol, ATP, biomass, generation, distanceTrav, ID, newRand):
+    def __init__(self, newRand, Arec, Brec, Amol, Bmol, config):
+        self.config = config
         self.Arec = Arec
         self.Brec = Brec
-        self.MaxReceptors = MaxReceptors
+        self.MaxReceptors = config.cellStats.maxRec
         self.Amol = Amol
         self.Bmol = Bmol
-        self.ATP = ATP
-        self.generation = generation
-        self.distanceTrav = distanceTrav
-        self.biomass = biomass
-        self.ID = ID
+        self.ATP = config.cellStats.ATP
+        self.generation = config.cellStats.generation
+        self.distanceTrav = config.cellStats.distTrav
+        self.biomass = config.cellStats.biomass
+        self.AbsorbtionRate = config.cellMetaStats.absorptionRate
+        self.ReceptorConsumptionRate = config.cellMetaStats.receptorConsumptionRate
+        self.survivalCost = config.cellMetaStats.survivalCost
+        self.VelocityMultiplier = config.cellMetaStats.velocityMultiplier
+        self.noise = config.cellMetaStats.noise
+        self.receptor_mode = config.cellMetaStats.receptorMode
+        self.Combined_portion = config.cellMetaStats.combinedPortion
+        self.Divide_portion = config.cellMetaStats.dividePortion
+        self.adaptive_ratio = config.cellMetaStats.adaptiveRatio
+        self.mutate = True
+        if config.cellMetaStats.mutate == "non":
+            self.mutate = False
+        self.decisiontype = config.cellMetaStats.decisiontype
 
         #bound receptors, get rewritten every time step
         self.leftBoundArec = 0
@@ -39,33 +43,63 @@ class cell(object):
         self.newRand = newRand
         self.vel = 0
 
+        self.cell_stress_level = 0
+        self.adaptive_ratio = 0
 
-    def Absorb(self, AconLeft, AconRight, BconLeft, BconRight):
-        retA = utils.calculateAbsorbtion((AconLeft + AconRight) / 2, self.AbsorbtionRate)
-        retB = utils.calculateAbsorbtion((BconLeft + BconRight) / 2, self.AbsorbtionRate)
+        self.dissocociation = config.cellMetaStats.dissocociationConstant
+
+
+    def Absorb(self, AconLeft, AconRight, BconLeft, BconRight, timestep):
+        retA = utils.calculateAbsorbtion((AconLeft + AconRight) / 2, self.AbsorbtionRate*timestep)
+        retB = utils.calculateAbsorbtion((BconLeft + BconRight) / 2, self.AbsorbtionRate*timestep)
+        #print(retA)
         self.Amol = self.Amol + retA
         self.Bmol = self.Bmol + retB
-        complex = utils.ATPcomplex(self.Amol, self.Bmol, 1, 1)
-        self.ATP += complex[0]
-        self.Amol -= complex[1]
-        self.Bmol -= complex[2]
+        #complex = utils.ATPcomplex(self.Amol, self.Bmol, 1, 1)
+        #self.ATP += complex[0]
+        #self.Amol -= complex[1]
+        #self.Bmol -= complex[2]
         return [retA, retB]
 
     #returns the velocity of the cell
-    def velocity(self, AconLeft, AconRight, BconLeft, BconRight, alphaA, alphaB):
+    def velocity(self, AconLeft, AconRight, BconLeft, BconRight, alphaA, alphaB, timeStep):
         leftArec = math.floor(self.Arec/2)
         rightArec = leftArec
         leftBrec = math.floor(self.Brec/2)
         rightBrec = leftBrec
-        dissocociation = 2
         self.AconLeft = AconLeft
         self.AconRight = AconRight
         self.BconLeft = BconLeft
         self.BconRight = BconRight
-        self.leftBoundArec = utils.calculateBoundKinetic(leftArec, AconLeft, dissocociation, self.newRand, self.noise, self.receptor_mode)
-        self.rightBoundArec = utils.calculateBoundKinetic(rightArec, AconRight, dissocociation, self.newRand, self.noise, self.receptor_mode)
-        self.leftBoundBrec = utils.calculateBoundKinetic(leftBrec, BconLeft, dissocociation, self.newRand, self.noise, self.receptor_mode)
-        self.rightBoundBrec = utils.calculateBoundKinetic(rightBrec, BconRight, dissocociation, self.newRand, self.noise, self.receptor_mode)
+        self.leftBoundArec = utils.calculateBoundKinetic(leftArec, AconLeft, self.dissocociation, self.newRand, self.noise, self.receptor_mode)
+        self.rightBoundArec = utils.calculateBoundKinetic(rightArec, AconRight, self.dissocociation, self.newRand, self.noise, self.receptor_mode)
+        self.leftBoundBrec = utils.calculateBoundKinetic(leftBrec, BconLeft, self.dissocociation, self.newRand, self.noise, self.receptor_mode)
+        self.rightBoundBrec = utils.calculateBoundKinetic(rightBrec, BconRight, self.dissocociation, self.newRand, self.noise, self.receptor_mode)
+
+        A_ratio = 0.5
+        if self.Amol + self.Bmol > 0:
+            A_ratio = self.Amol/(self.Amol + self.Bmol)
+
+        adjusted_rightArec = self.rightBoundArec*(1-A_ratio)
+        adjusted_rightBrec = self.rightBoundBrec*A_ratio
+        adjusted_leftArec = self.leftBoundArec*(1-A_ratio)
+        adjusted_leftBrec = self.leftBoundBrec*A_ratio
+
+        wrong_rightArec = self.rightBoundArec * (A_ratio)
+        wrong_rightBrec = self.rightBoundBrec * (1-A_ratio)
+        wrong_leftArec = self.leftBoundArec * A_ratio
+        wrong_leftBrec = self.leftBoundBrec * (1-A_ratio)
+        if self.decisiontype == "adjusted":
+            vel = 2*((adjusted_rightArec + adjusted_rightBrec) - (adjusted_leftArec+adjusted_leftBrec))
+        if self.decisiontype == "drastic2":
+            if self.Amol < self.Bmol:
+                vel = 2*(self.rightBoundArec - self.leftBoundArec)
+            else:
+                vel = 2*(self.rightBoundBrec - self.leftBoundBrec)
+        elif self.decisiontype == "wrong":
+            vel = 2 *((wrong_rightArec + wrong_rightBrec) - (wrong_leftArec + wrong_leftBrec))
+        #rightBound = utils.calculateBoundKinetic(rightBrec+rightArec, BconRight+AconRight, dissocociation, self.newRand, self.noise, self.receptor_mode)
+        #leftBound = utils.calculateBoundKinetic(leftBrec+leftArec, BconLeft+AconLeft, dissocociation, self.newRand, self.noise, self.receptor_mode)
 
         #print(self.leftBoundArec)
         #print(self.leftBoundBrec)
@@ -73,34 +107,62 @@ class cell(object):
         #print(self.rightBoundBrec)
 
         #adopting right positive notation
-        vel = math.floor(((self.rightBoundArec + self.rightBoundBrec) - (
-                    self.leftBoundArec + self.leftBoundBrec)) * self.VelocityMultiplier)
+        elif self.decisiontype == "non" or self.decisiontype == "measured" or self.decisiontype == "counter" or self.decisiontype == "drastic":
+            vel = ((self.rightBoundArec + self.rightBoundBrec) - (self.leftBoundArec + self.leftBoundBrec))
+        #vel = math.floor((rightBound -leftBound) * self.VelocityMultiplier)
         #vel = math.floor(((self.leftBoundArec + self.leftBoundBrec) - (self.rightBoundArec + self.rightBoundBrec)) * self.VelocityMultiplier)
         #print(vel)
         #exit(-1)
         self.vel = vel
-        rand = np.random.randint(-50,50, 1)[0]
+        vel = vel*(1/self.config.simParams.locationStep)*timeStep
+        rand = np.random.randint(-50, 50, 1)[0]
         #print(rand)
-        if vel > 10:
-            vel = 10
-        elif vel < -10:
-            vel = -10
-        return rand #math.floor(((self.rightBoundArec + self.rightBoundBrec) - (self.leftBoundArec + self.leftBoundBrec))*self.VelocityMultiplier)
+        #if self.vel > 10:
+        #   self.vel = 10
+        #elif self.vel < -10:
+        #    self.vel = -10
+        return vel #math.floor(((self.rightBoundArec + self.rightBoundBrec) - (self.leftBoundArec + self.leftBoundBrec))*self.VelocityMultiplier)
 
-    def consumption(self, velocity, fullDie):
+    def consumption(self, velocity, fullDie, timeStep):
         AllCost = self.survivalCost
-        self.ATP -= AllCost
-        if self.ATP < 0:
-            self.Amol += self.ATP
-            self.Bmol += self.ATP
-            if self.Amol < 0:
-                self.Amol = 0
-            if self.Bmol < 0:
-                self.Bmol = 0
-            self.ATP = 0
+        combined_ratio = self.Combined_portion
+
+        #if self.Amol + self.Bmol != 0:
+
+        #ratio = self.Amol/(self.Bmol+self.Amol)
+        #self.Amol -= math.floor((2*AllCost*(1-combined_ratio)*ratio)*timeStep)
+        #self.Bmol -= math.floor((2*AllCost*(1-combined_ratio)*(1-ratio))*timeStep)
+        self.Amol -= math.floor((AllCost*combined_ratio)*timeStep)
+        self.Bmol -= math.floor((AllCost*combined_ratio)*timeStep)
+
+        if self.Amol < self.Bmol:
+            self.cell_stress_level = self.Amol
+            if self.Amol > self.survivalCost*5:
+                self.cell_stress_level = self.survivalCost*5
+        else:
+            self.cell_stress_level = self.Bmol
+            if self.Bmol > self.survivalCost*5:
+                self.cell_stress_level = self.survivalCost*5
+
+        self.cell_stress_level = (self.survivalCost*5 - self.cell_stress_level)/(self.survivalCost*5)
+
+
+        if self.Amol < 0 or self.Bmol < 0:
             if fullDie:
-                #print("this happened")
                 return False
+        return True
+
+        if self.Amol + self.Bmol <= 0:
+            self.Amol = 0
+            self.Bmol = 0
+            if fullDie:
+                return False
+        if self.Amol < 0:
+            self.Bmol += self.Amol
+            self.Amol = 0
+        elif self.Bmol < 0:
+            self.Amol += self.Bmol
+            self.Bmol = 0
         return True
 
     def incrementDis(self, distance):
@@ -108,7 +170,7 @@ class cell(object):
 
     def divide(self):
         self.biomass += 1
-        if self.ATP > self.survivalCost*5:
+        if self.Amol > self.survivalCost*5 and self.Bmol > self.survivalCost*5:
             return True
         return False
 
@@ -120,22 +182,51 @@ class cell(object):
         exterB = self.leftBoundBrec + self.rightBoundBrec
         gradA = math.fabs(self.rightBoundArec - self.leftBoundArec)
         gradB = math.fabs(self.rightBoundBrec - self.leftBoundBrec)
-        if self.decisiontype == "naive":
-            ratio = float(interA)/float(interB+interA)
+        if self.decisiontype == "drastic":
+            if interA > interB:
+                self.Brec = self.MaxReceptors
+                self.Arec = 0
+            else:
+                self.Arec = self.MaxReceptors
+                self.Brec = 0
+        if self.decisiontype == "measured":
+            #ratio2 = 0.999
+            if float(interA+interB) != 0:
+                ratio = float(interA)/float(interB+interA)
+            else:
+                ratio = 0.5
+            #self.Brec = math.floor(self.MaxReceptors*ratio*(1-self.adaptive_ratio))+math.floor(self.MaxReceptors*0.5*self.adaptive_ratio)
             self.Brec = math.floor(self.MaxReceptors*ratio)
             self.Arec = self.MaxReceptors - self.Brec
-        elif self.decisiontype == "measured":
+        if self.decisiontype == "counter":
+            if float(interA+interB) != 0:
+                ratio = float(interA)/float(interB+interA)
+            else:
+                ratio = 0.5
+            self.Arec = math.floor(self.MaxReceptors * ratio)
+            self.Brec = self.MaxReceptors - self.Brec
+
+        elif self.decisiontype == "measured2":
             ratio1 = float(interA) / float(interB + interA)
             ratio2 = float(exterA)/float(exterB+exterA)
             self.Brec = math.floor(self.MaxReceptors * ((ratio1+ratio2)*(1.0/2.0)))
             self.Arec = self.MaxReceptors - self.Brec
         elif self.decisiontype == "prediction":
-            ratio1 = float(interA) / float(interB + interA)
-            ratio2 = float(exterA) / float(exterB + exterA)
-            ratio3 = float(gradB) /float(gradA + gradB)
-            self.Brec = math.floor(self.MaxReceptors * ((ratio1 + ratio2 + ratio3) * (1.0 / 3.0)))
+            if float(interA+interB) != 0:
+                ratio = float(interA)/float(interB+interA)
+            else:
+                ratio = 0
+            #print(self.cell_stress_level)
+            Bratio = self.Brec / (self.Brec + self.Arec)
+            self.Brec = math.floor((1-self.cell_stress_level)*self.MaxReceptors*Bratio) + math.floor((self.cell_stress_level)*self.MaxReceptors*ratio)
             self.Arec = self.MaxReceptors - self.Brec
-        elif self.decisiontype == "non":
+
+            #ratio1 = float(interA) / float(interB + interA)
+            #ratio2 = float(exterA) / float(exterB + exterA)
+            #ratio3 = float(gradB) /float(gradA + gradB)
+            #self.Brec = math.floor(self.MaxReceptors * ((ratio1 + ratio2 + ratio3) * (1.0 / 3.0)))
+            #self.Arec = self.MaxReceptors - self.Brec
+        elif self.decisiontype == "non" or self.decisiontype == "adjusted" or self.decisiontype == "wrong" or self.decisiontype == "drastic2":
             return
         return
 

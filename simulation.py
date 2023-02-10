@@ -5,6 +5,7 @@ import utils
 import random
 import math
 from scipy import special
+import output
 import matplotlib.pyplot as plt
 
 class simulation(object):
@@ -30,11 +31,10 @@ class simulation(object):
 
     #...
 
-    def VonMises(self, var, maximum, offset, length):
-        length = length
+    def VonMises(self, var, maximum, offset, length, locationStep):
         arr = []
         kappa = 1/var
-        mu = 2 * math.pi / length * offset
+        mu = (2 * math.pi / length) * offset
         bessel = (special.iv(0, kappa))
         sum = 0.0
         increment = 2 * math.pi / length
@@ -44,8 +44,10 @@ class simulation(object):
             numerator = math.exp(kappa * math.cos(x - mu))
             arr.append(numerator / (2 * math.pi * bessel))
             sum += numerator / (2 * math.pi * bessel)
-        arr = (arr / sum)*maximum
+        arr = (arr / sum)*maximum/locationStep
         return arr
+
+    #def uniform(self, ):
 
     #reads in and returns an SNR value for a given set of receptors and concentrations
     def findSNRfromTable(self, receptors, concentrations):
@@ -82,78 +84,70 @@ class simulation(object):
         return (sum/len(SNRs))
 
     #initalize the simulation
-    def __init__(self, ConcParams, CellMetaStats, CellStats, CellLocationStats, EnviornmentParams, SimParams, newRand):
-        length = SimParams[0]
-        #concentrations
-        diffusionCoefficent = ConcParams[0]
-        absorb = False
+    def constantConc(self, conc, length):
+        arr = []
+        for i in range(length):
+            arr.append(conc)
+        return arr
 
-        if ConcParams[1] == "absorb":
+    def constantUpDown(self, length, low, high, offset):
+        rate = (high-low)/(length/2)
+        arr = []
+        firstUp = int(length/2)
+        down = length - firstUp
+        for i in range(int(length/2)):
+            arr.append(low+(rate*i))
+        for i in range(down):
+            arr.append(high-(rate*i))
+        arr2 = utils.list_empty([len(arr)], 0)
+        offsetAdjusted = math.floor((offset/100)*length)
+        for i in range(length):
+            arr2[i] = arr[(i+offsetAdjusted) % length]
+        return arr2
+
+    def __init__(self, config):
+        self.config = config
+        self.length = int(config.simParams.length * (1/config.simParams.locationStep))
+        absorb = None
+        if config.concParams.arp == "absorb":
             absorb = True
-        self.concentrationFreq = ConcParams[2]
-        self.concentrationMag = ConcParams[3]
-        self.locationA = ConcParams[4]
-        self.locationB = ConcParams[5]
-        self.locationC = ConcParams[12]
+        self.concentrationFreq = config.concParams.repeatFrequency
+        self.concentrationMag = config.concParams.magnitude
+        self.locationA = config.concParams.locationA
+        self.locationB = config.concParams.locationB
+        self.locationC = config.concParams.locationC
         ConcentrationA = []
         ConcentrationB = []
         ConcentrationC = []
-        for i in range(length):
+        for i in range(self.length):
             ConcentrationA.append(0.0)
             ConcentrationB.append(0.0)
             ConcentrationC.append(0.0)
-        if self.locationA > -1:
-            ConcentrationA[self.locationA] = self.concentrationMag
-            ConcentrationB[self.locationB] = self.concentrationMag
-            ConcentrationC[self.locationC] = self.concentrationMag
-        else:
-            ConcentrationA[newRand.getNewInt(0, length)] = self.concentrationMag
-            ConcentrationB[newRand.getNewInt(0, length)] = self.concentrationMag
-            ConcentrationC[newRand.getNewInt(0, length)] = self.concentrationMag
-        if ConcParams[6] == "static":
-            ConcentrationA = self.VonMises(ConcParams[7], ConcParams[8], ConcParams[9], length)
-            ConcentrationB = self.VonMises(ConcParams[7], ConcParams[8], ConcParams[10], length)
-            ret = "concA = ["
-            ret2 = "concB = ["
-            for i in range(0, len(ConcentrationA)-1):
-                ret = ret + str(ConcentrationA[i]) + ", "
-                ret2 = ret2 + str(ConcentrationB[i]) + ", "
-            ret = ret + str(ConcentrationA[len(ConcentrationA)-1]) + "]"
-            ret2 = ret2 + str(ConcentrationB[len(ConcentrationB)-1]) + "]"
-            print(ret)
-            print(ret2)
-            #print(ret)
-            #exit(-1)
-            #exit(-1)
-            ConcentrationC = self.VonMises(ConcParams[7], ConcParams[8], ConcParams[11], length)
 
-        #cell locations data
-        CellLocations = CellLocationStats[0]
+        if config.concParams.concProfile == "vonMises":
+            ConcentrationA = self.VonMises(config.concParams.VonMisesVar, config.concParams.VonMisesMagnitude, config.concParams.VonMisesAOffset, self.length, config.simParams.locationStep)
+            ConcentrationB = self.VonMises(config.concParams.VonMisesVar, config.concParams.VonMisesMagnitude, config.concParams.VonMisesBOffset, self.length, config.simParams.locationStep)
+            ConcentrationC = self.VonMises(config.concParams.VonMisesVar, config.concParams.VonMisesMagnitude, config.concParams.VonMisesCOffset, self.length, config.simParams.locationStep)
+        elif config.concParams.concProfile == "constant" or config.concParams.concProfile == "manaFromHeaven":
+            ConcentrationA = self.constantConc(config.concParams.constantConc, self.length)
+            ConcentrationB = self.constantConc(config.concParams.constantConc, self.length)
+            ConcentrationC = self.constantConc(config.concParams.constantConc, self.length)
+        elif config.concParams.concProfile == "constUpDown":
+            ConcentrationA = self.constantUpDown(self.length, config.concParams.uphillLow, config.concParams.uphillHigh, config.concParams.locationA)
+            ConcentrationB = self.constantUpDown(self.length, config.concParams.uphillLow, config.concParams.uphillHigh, config.concParams.locationB)
+            ConcentrationC = self.constantUpDown(self.length, config.concParams.uphillLow, config.concParams.uphillHigh, config.concParams.locationC)
+
+        CellLocations = config.cellMetaStats.cellLocations
         if len(CellLocations) == 0:
-            CellLocations = range(length-1)
-        largestID = CellStats[9]
+            CellLocations = range(self.length-1)
         Allcells = []
         for i in range(len(CellLocations)):
-            currCell = cell.cell(CellStats[0], CellStats[1], CellStats[2], CellStats[3], CellStats[4], CellStats[5], CellStats[6], CellStats[7], CellStats[8], largestID, newRand)
-            currCell.AbsorbtionRate = CellMetaStats[0]
-            currCell.ReceptorConsumptionRate = CellMetaStats[1]
-            currCell.survivalCost = CellMetaStats[2]
-            currCell.VelocityMultiplier = CellMetaStats[3]
-            currCell.noise = CellMetaStats[6]
-            currCell.receptor_mode = CellMetaStats[7]
-            currCell.VelocityMultiplier = CellMetaStats[8]
-            if CellMetaStats[4] == "non":
-                currCell.mutate = False
-            if CellMetaStats[5] == "non":
-                currCell.decisiontype = "non"
+            currCell = cell.cell(newRand=1, Arec = config.cellStats.Arec, Brec = config.cellStats.Brec, Amol = config.cellStats.Amol, Bmol = config.cellStats.Bmol, config = config)
             Allcells.append(currCell)
-            largestID += 1
 
-        self.SimEnviornment = enviornment.enviornment(length, ConcentrationA, ConcentrationB, diffusionCoefficent, Allcells, CellLocations, largestID, newRand, ConcentrationC)
-        self.SimEnviornment.fullDivide = EnviornmentParams[1]
-        self.SimEnviornment.fullDie = EnviornmentParams[2]
-        self.SimLength = EnviornmentParams[0]
-        self.dataRecord = SimParams
+        self.SimEnviornment = enviornment.enviornment(self.length, ConcentrationA, ConcentrationB, ConcentrationC, Allcells, CellLocations, newRand = 1, config = config)
+        self.SimLength = config.simParams.simLength
+        self.SimEnviornment.timeStep = config.simParams.simTimeStep
         return
 
     #If there was diffusion
@@ -261,7 +255,7 @@ class simulation(object):
 
         totalCells = []
         multiple = 1
-        for i in range(self.SimLength):
+        for i in range(self.SimLength/self.SimEnviornment.timeStep):
             #print(i)
             #print(self.SimEnviornment.cellsAlive())
             if i == 1:
@@ -414,6 +408,8 @@ class simulation(object):
         dataY5 = []
         dataY6 = []
 
+        enviornment_Stats = []
+
 
         for i in range(roll):
             dataX1.append([])
@@ -433,21 +429,21 @@ class simulation(object):
         totalCells = []
         multiple = 1
         MI_vars = []
-        for i in range(self.SimLength):
+        for i in range(math.floor(self.SimLength/self.SimEnviornment.timeStep)):
             #print(i)
             #print(self.SimEnviornment.cellsAlive())
-            if i == 1:
-                print(self.SimEnviornment.cellsAlive())
+            #if i == 1:
+                #print(self.SimEnviornment.cellsAlive())
                 #print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
             rollingEntropy = 0.0
             arr = self.SimEnviornment.Bconcentrations
             self.SimEnviornment.runCells()
             #print("made it here")
-            if i % 100 == 0:
-                #print(str(i) + " time")
+            if i % 10 == 0:
+                print(str(i) + " time")
                 if printRun:
                     utils.plotAllCells(self.SimEnviornment, i)
-                    #utils.plotReceptors(self.SimEnviornment, i)
+                    utils.plotAllConcentrat(self.SimEnviornment, i)
             cellsAlive = self.SimEnviornment.cellsAlive()
             totalCells.append(cellsAlive*multiple)
 
@@ -456,7 +452,7 @@ class simulation(object):
             #if i % 5 == 0:
             #    print(str(i) + " time")
             #    print(self.SimEnviornment.cellsAlive())
-            if i % (self.SimLength-1) == 0 and i != 0:
+            if i == math.floor(self.SimLength/self.SimEnviornment.timeStep)-1:
                 concs = self.SimEnviornment.giveAllCurrentConc()
                 sum = 0.0
                 for i in range(len(totalCells)):
@@ -536,12 +532,12 @@ class simulation(object):
                 testMI = MICalc.MICalc()
                 #print(dataX)
                 #print(dataY)
+                print(len(self.SimEnviornment.giveAllCells()))
                 ret = testMI.AltMI(dataX,dataY)
                 ent_ret = testMI.entropy_allX(dataY)
                 entr_in_ret = testMI.entropy_allX(dataX)
                 #ret = 0;
                 #
-                print(ret)
                 ret2.append(rollingEntropy)
                 MIs.append(ret[0])
                 Hx.append(ret[1])
@@ -552,7 +548,7 @@ class simulation(object):
             input_var = self.SimEnviornment.Recep_Var_Arr_input
             output_var = self.SimEnviornment.Recep_Var_Arr_Output
 
-            if i % 100 == 0:
+            if i == math.floor(self.SimLength/self.SimEnviornment.timeStep)-1:
                 MIs_var_array = []
                 MI_var = MICalc.MICalc()
                 arr = []
@@ -566,7 +562,6 @@ class simulation(object):
                     for j in range(var_length):
                         MIs_var_array.append(curr_MI)
                     arr.append(len(input_var[i][1]))
-                    #print(len(input_var[i][1]))
                 mean = 0.0
                 for k in range(len(MIs_var_array)):
                     mean = mean + MIs_var_array[k]
@@ -576,27 +571,21 @@ class simulation(object):
                     final_var = final_var + math.pow(math.fabs(MIs_var_array[k] - mean),2)
                 final_var = math.sqrt(final_var/len(MIs_var_array))
                 MI_vars.append(final_var)
-                #print("here")
-
+                plt.grid()
+                plt.hist(MIs_var_array, density = True, bins = 50)
+                plt.clf()
 
             if i % 1 == 0:
                 self.SimEnviornment.resetDivisions()
-        #print(MIs)
-        #exit(-1)
-        print(totalCells)
+
+            enviornment_Stats.append(self.SimEnviornment.getAllStats())
+
         move = self.SimEnviornment.giveMovement()
         sum1 = 0;
         for i in range(len(move)):
             sum1 = sum1 + math.fabs(move[i])
         sum1 = sum1/len(move)
-        print(str(sum1) + "------------------------------------------------asdfasdgasfdgasdfvsadvsdavsdagvsfda------------------------------------------")
-        print(MIs)
-        print("MIs- -----------------------------------------------------------------------------------------------------------")
-        #print(MI_vars)
-        #exit(-1)
-        return [totalCells, MIs, entr, entr_in, Hx, Hxgiveny, MI_vars]
-
-
+        return [totalCells, MIs, entr, entr_in, Hx, Hxgiveny, MI_vars, enviornment_Stats]
 
     #runs the simulation and calculates the MI, Division rate and calculated SNR
     def staicConcRunTimeSNR(self, printRun):
@@ -606,6 +595,7 @@ class simulation(object):
         for i in range(self.SimLength):
             #print(str(i) + " time")
             self.SimEnviornment.runCells()
+
             if i % 10 == 0:
                 print(str(i) + " time")
                 if printRun:
@@ -638,7 +628,6 @@ class simulation(object):
                 SNRs.append(SNR)
         return [retDivisions, MIs, SNRs]
 
-
     def traditionalRun(self,time):
         self.runBeginningConc(time)
         frequency = self.concentrationFreq
@@ -653,3 +642,281 @@ class simulation(object):
             if frequency > 0:
                 if i % frequency == 0:
                     self.SimEnviornment.addAB(self.concentrationMag, self.locationA, self.locationB)
+
+    def test(self, config, run, date):
+        lam = config.simParams.lam
+        gamma = config.simParams.gamma
+        Aknoght = config.simParams.aknoght
+
+        totalCells = []
+        multiple = 1
+        muadj = self.SimEnviornment.timeStep * lam
+
+        cellLocations = []
+        internalAB = []
+        totalReceptors = []
+        boundReceptors = []
+        totalConcs = []
+        cellMovement = []
+        enviornmentConcs = []
+
+        all_Aratios = []
+        for i in range(10):
+            all_Aratios.append([])
+
+        for i in range(math.ceil(self.SimLength*(1/self.SimEnviornment.timeStep))):
+            if i%((1/self.SimEnviornment.timeStep)*10) == 0:
+                print("time: " + str(i*self.SimEnviornment.timeStep))
+            self.SimEnviornment.runCells()
+
+            if config.concParams.concProfile == "manaFromHeaven":
+                # run mana from heaven
+                if not config.simParams.presetBool:
+                    rand1 = random.uniform(0, 1)
+                    rand2 = random.uniform(0, 1)
+                    if rand1 < muadj:
+                        locationA = random.randint(0, self.SimEnviornment.length-1)
+                        if config.simParams.presetSave:
+                            config.simParams.presetA_time.append(i)
+                            config.simParams.presetA_loc.append(locationA)
+                        self.SimEnviornment.addA(Aknoght / self.SimEnviornment.locationStep, locationA)
+                    if rand2 < muadj:
+                        locationB = random.randint(0, self.SimEnviornment.length-1)
+                        if config.simParams.presetSave:
+                            config.simParams.presetB_time.append(i)
+                            config.simParams.presetB_loc.append(locationB)
+                        self.SimEnviornment.addB(Aknoght/self.SimEnviornment.locationStep, locationB)
+                else:
+                    if i in config.simParams.presetA_time:
+                        loc = int(config.simParams.presetA_loc[config.simParams.presetA_time.index(i)])
+                        self.SimEnviornment.addA(Aknoght / self.SimEnviornment.locationStep, loc)
+                    if i in config.simParams.presetB_time:
+                        loc = int(config.simParams.presetB_loc[config.simParams.presetB_time.index(i)])
+                        self.SimEnviornment.addB(Aknoght / self.SimEnviornment.locationStep, loc)
+                #run degradation
+                degradeCoe = gamma * self.SimEnviornment.timeStep
+                for j in range(len(self.SimEnviornment.Aconcentrations)):
+                    self.SimEnviornment.Aconcentrations[j] = self.SimEnviornment.Aconcentrations[j]*(1-degradeCoe)
+                    self.SimEnviornment.Bconcentrations[j] = self.SimEnviornment.Bconcentrations[j]*(1-degradeCoe)
+                self.SimEnviornment.runConcentrationAdjusted()
+
+            if config.outputFlags.concProfile:
+                enviornmentConcs.append([])
+                enviornmentConcs[i].append(self.SimEnviornment.Aconcentrations)
+                enviornmentConcs[i].append(self.SimEnviornment.Bconcentrations)
+
+            if config.outputFlags.cellLocations or config.outputFlags.internalAB or config.outputFlags.totalReceptors or config.outputFlags.boundReceptors or config.outputFlags.totalConcs or config.outputFlags.cellMovement:
+                cells = self.SimEnviornment.positionHash
+                if config.outputFlags.cellLocations:
+                    cellLocations.append([])
+                if config.outputFlags.internalAB:
+                    internalAB.append([])
+                if config.outputFlags.totalReceptors:
+                    totalReceptors.append([])
+                if config.outputFlags.boundReceptors:
+                    boundReceptors.append([])
+                if config.outputFlags.totalConcs:
+                    totalConcs.append([])
+                if config.outputFlags.cellMovement:
+                    cellMovement.append([])
+                for pos in cells:
+                    cellsAtPos = cells[pos]
+                    for cell in range(len(cellsAtPos)):
+                        if config.outputFlags.cellLocations:
+                            cellLocations[i].append(pos)
+                        if config.outputFlags.internalAB:
+                            internalAB[i].append([cellsAtPos[cell].Amol, cellsAtPos[cell].Bmol])
+                        if config.outputFlags.totalReceptors:
+                            totalReceptors[i].append([cellsAtPos[cell].Arec, cellsAtPos[cell].Brec])
+                        if config.outputFlags.boundReceptors:
+                            boundReceptors[i].append([cellsAtPos[cell].leftBoundArec, cellsAtPos[cell].rightBoundArec, cellsAtPos[cell].leftBoundBrec, cellsAtPos[cell].rightBoundBrec])
+                        if config.outputFlags.totalConcs:
+                            left = (pos-round(1/self.config.simParams.locationStep))% math.floor(self.length)
+                            right = (pos+round(1/self.config.simParams.locationStep))% math.floor(self.length)
+                            totalConcs[i].append([self.SimEnviornment.Aconcentrations[left], self.SimEnviornment.Aconcentrations[right] ,self.SimEnviornment.Bconcentrations[left], self.SimEnviornment.Bconcentrations[right]])
+                        if config.outputFlags.cellMovement:
+                            cellMovement[i].append(cellsAtPos[cell].vel)
+
+            if (self.SimEnviornment.decreaseSpace()):
+                if config.outputFlags.totalcells:
+                    cellsAlive = self.SimEnviornment.cellsAlive()
+                    totalCells.append(cellsAlive * multiple)
+                    multiple = multiple * (cellsAlive / self.SimEnviornment.lowSpace)
+            else:
+                if config.outputFlags.totalcells:
+                    cellsAlive = self.SimEnviornment.cellsAlive()
+                    totalCells.append(cellsAlive * multiple)
+            """""
+            if not config.simParams.presetBool:
+                if rand1 < muadj:
+                    presetA.append(i)
+                    locationA = random.randint(0, math.floor(self.SimEnviornment.length*(1/self.SimEnviornment.locationStep))-1)
+                    presetA_loc.append(locationA)
+                if rand2 < muadj:
+                    presetB.append(i)
+                    locationB = random.randint(0, math.floor(self.SimEnviornment.length*(1/self.SimEnviornment.locationStep))-1)
+                    presetB_loc.append(locationB)
+            else:
+                for j in range(len(presetA)):
+                    if i == presetA[j]:
+                        self.SimEnviornment.addA(Aknoght / self.SimEnviornment.locationStep, presetA_loc[j])
+                for j in range(len(presetB)):
+                    if i == presetB[j]:
+                        self.SimEnviornment.addB(Aknoght / self.SimEnviornment.locationStep, presetB_loc[j])
+            """""
+
+        totalCellsFile = None
+        totalReceptorsFile = None
+        boundReceptorsFile = None
+        internalABFile = None
+        totalConcsFile = None
+        cellLocationsFile = None
+        cellMovementFile = None
+        enviornmentConcsFile = None
+        if config.outputFlags.totalcells:
+            totalCellsFile = utils.saveDataDate(run, date, "totalCells", totalCells, config.runOutputFlags.compressSave)
+        if config.outputFlags.totalReceptors:
+            totalReceptorsFile = utils.saveDataDate(run, date, "totalReceptors", totalReceptors, config.runOutputFlags.compressSave)
+        if config.outputFlags.boundReceptors:
+            boundReceptorsFile = utils.saveDataDate(run, date, "boundReceptors", boundReceptors, config.runOutputFlags.compressSave)
+        if config.outputFlags.internalAB:
+            internalABFile = utils.saveDataDate(run, date, "internalAB", internalAB, config.runOutputFlags.compressSave)
+        if config.outputFlags.totalConcs:
+            totalConcsFile = utils.saveDataDate(run, date, "totalConcs", totalConcs, config.runOutputFlags.compressSave)
+        if config.outputFlags.cellLocations:
+            cellLocationsFile = utils.saveDataDate(run, date, "cellLocations", cellLocations, config.runOutputFlags.compressSave)
+        if config.outputFlags.cellMovement:
+            cellMovementFile = utils.saveDataDate(run, date, "cellMovement", cellMovement, config.runOutputFlags.compressSave)
+        if config.outputFlags.concProfile:
+            enviornmentConcsFile = utils.saveDataDate(run, date, "enviornmentConcs", enviornmentConcs, config.runOutputFlags.compressSave)
+
+        #print("Cells Alive At End: " + str(self.SimEnviornment.cellsAlive()))
+        config.writeConfig("Data/" + date + "/" + run + "/config.cfg")
+        out = output.output(runName = run,enviornmentConcsFile = enviornmentConcsFile, totalcellsFile = totalCellsFile, totalReceptorsFile = totalReceptorsFile, boundReceptorsFile = boundReceptorsFile, internalABFile = internalABFile, totalConcsFile = totalConcsFile, cellLocationsFile = cellLocationsFile, cellMovementFile = cellMovementFile)
+        return out
+
+    def indtest(self, config, run):
+        lam = 0.4
+        gamma = 0.2
+        Aknoght = 400
+        totalCells = []
+        multiple = 1
+        muadj = self.SimEnviornment.timeStep * lam
+
+        cellLocations = []
+        internalAB = []
+        totalReceptors = []
+        boundReceptors = []
+        totalConcs = []
+        cellMovement = []
+
+        divisionsPerTime = []
+        deathsPerTime = []
+
+        all_Aratios = []
+        for i in range(10):
+            all_Aratios.append([])
+        i = -1
+        allDivisons = []
+        allDeaths = []
+        while self.SimEnviornment.cellsAlive() > 0:
+            print("cells alive: " + str(self.SimEnviornment.cellsAlive()))
+            i += 1
+            if i%((1/self.SimEnviornment.timeStep)*1) == 0:
+                print("time: " + str(i*self.SimEnviornment.timeStep))
+                x = range(self.SimEnviornment.length)
+                plt.bar(x, self.SimEnviornment.Aconcentrations, width=1)
+                plt.bar(x, self.SimEnviornment.Bconcentrations, width=1)
+                plt.hist(self.SimEnviornment.giveCellInArr(), 100)
+                plt.show()
+
+            self.SimEnviornment.runCells()
+            allDivisons.append(self.SimEnviornment.divisions)
+            allDeaths.append(self.SimEnviornment.giveDeaths())
+            self.SimEnviornment.resetDivisions()
+
+            if config.outputFlags.cellLocations or config.outputFlags.internalAB or config.outputFlags.totalReceptors or config.outputFlags.boundReceptors or config.outputFlags.totalConcs or config.outputFlags.cellMovement:
+                cells = self.SimEnviornment.positionHash
+                if config.outputFlags.cellLocations:
+                    cellLocations.append([])
+                if config.outputFlags.internalAB:
+                    internalAB.append([])
+                if config.outputFlags.totalReceptors:
+                    totalReceptors.append([])
+                if config.outputFlags.boundReceptors:
+                    boundReceptors.append([])
+                if config.outputFlags.totalConcs:
+                    totalConcs.append([])
+                if config.outputFlags.cellMovement:
+                    cellMovement.append([])
+                for pos in cells:
+                    cellsAtPos = cells[pos]
+                    for cell in range(len(cellsAtPos)):
+                        if config.outputFlags.cellLocations:
+                            cellLocations[i].append(pos)
+                        if config.outputFlags.internalAB:
+                            internalAB[i].append([cellsAtPos[cell].Amol, cellsAtPos[cell].Bmol])
+                        if config.outputFlags.totalReceptors:
+                            totalReceptors[i].append([cellsAtPos[cell].Arec, cellsAtPos[cell].Brec])
+                        if config.outputFlags.boundReceptors:
+                            boundReceptors[i].append([cellsAtPos[cell].leftBoundArec, cellsAtPos[cell].rightBoundArec, cellsAtPos[cell].leftBoundBrec, cellsAtPos[cell].rightBoundBrec])
+                        if config.outputFlags.totalConcs:
+                            left = (pos-round(1/self.config.simParams.locationStep))% math.floor(self.length)
+                            right = (pos+round(1/self.config.simParams.locationStep))% math.floor(self.length)
+                            totalConcs[i].append([self.SimEnviornment.Aconcentrations[left], self.SimEnviornment.Aconcentrations[right] ,self.SimEnviornment.Bconcentrations[left], self.SimEnviornment.Bconcentrations[right]])
+                        if config.outputFlags.cellMovement:
+                            cellMovement[i].append(cellsAtPos[cell].vel)
+
+            #if (self.SimEnviornment.decreaseSpace()):
+            #    if config.outputFlags.totalcells:
+            #        cellsAlive = self.SimEnviornment.cellsAlive()
+            #        totalCells.append(cellsAlive * multiple)
+            #        multiple = multiple * (cellsAlive / self.SimEnviornment.lowSpace)
+            #else:
+            #    if config.outputFlags.totalcells:
+            #        cellsAlive = self.SimEnviornment.cellsAlive()
+            #        totalCells.append(cellsAlive * multiple)
+            """""
+            if not config.simParams.presetBool:
+                if rand1 < muadj:
+                    presetA.append(i)
+                    locationA = random.randint(0, math.floor(self.SimEnviornment.length*(1/self.SimEnviornment.locationStep))-1)
+                    presetA_loc.append(locationA)
+                if rand2 < muadj:
+                    presetB.append(i)
+                    locationB = random.randint(0, math.floor(self.SimEnviornment.length*(1/self.SimEnviornment.locationStep))-1)
+                    presetB_loc.append(locationB)
+            else:
+                for j in range(len(presetA)):
+                    if i == presetA[j]:
+                        self.SimEnviornment.addA(Aknoght / self.SimEnviornment.locationStep, presetA_loc[j])
+                for j in range(len(presetB)):
+                    if i == presetB[j]:
+                        self.SimEnviornment.addB(Aknoght / self.SimEnviornment.locationStep, presetB_loc[j])
+            """""
+
+        totalCellsFile = None
+        totalReceptorsFile = None
+        boundReceptorsFile = None
+        internalABFile = None
+        totalConcsFile = None
+        cellLocationsFile = None
+        cellMovementFile = None
+        if config.outputFlags.totalcells:
+            totalCellsFile = utils.saveDataDate(run, "totalCells_" + run, totalCells, config.runOutputFlags.compressSave)
+        if config.outputFlags.totalReceptors:
+            totalReceptorsFile = utils.saveDataDate(run, "totalReceptors_" + run, totalReceptors, config.runOutputFlags.compressSave)
+        if config.outputFlags.boundReceptors:
+            boundReceptorsFile = utils.saveDataDate(run, "boundReceptors_" + run, boundReceptors, config.runOutputFlags.compressSave)
+        if config.outputFlags.internalAB:
+            internalABFile = utils.saveDataDate(run, "internalAB_" + run, internalAB, config.runOutputFlags.compressSave)
+        if config.outputFlags.totalConcs:
+            totalConcsFile = utils.saveDataDate(run, "totalConcs_" + run, totalConcs, config.runOutputFlags.compressSave)
+        if config.outputFlags.cellLocations:
+            cellLocationsFile = utils.saveDataDate(run, "cellLocations_" + run, cellLocations, config.runOutputFlags.compressSave)
+        if config.outputFlags.cellMovement:
+            cellMovementFile = utils.saveDataDate(run, "cellMovement_" + run, cellMovement, config.runOutputFlags.compressSave)
+        print("Cells Alive At End: " + str(self.SimEnviornment.cellsAlive()))
+        out = output.output(totalcellsFile = totalCellsFile, totalReceptorsFile = totalReceptorsFile, boundReceptorsFile = boundReceptorsFile, internalABFile = internalABFile, totalConcsFile = totalConcsFile, cellLocationsFile = cellLocationsFile, cellMovementFile = cellMovementFile)
+        return out, allDivisons, allDeaths
+

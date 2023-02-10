@@ -3,16 +3,32 @@ import matplotlib.pyplot as plt
 import random
 import statistics
 import colors
+import os
+import pickle
+import datetime
+from datetime import date
+import gzip
 import numpy as np
+import matplotlib.animation as animation
+from matplotlib.animation import PillowWriter
+import io
+from PIL import Image
+import imageio
 
 def calculateBoundKinetic(receptors, concentration, dissocociationConstant, newRand, noise, mode):
     boundRec = 0
+    #print(mode)
+    #return concentration
 
     if mode == "simulate":
         #print("simulate is running")
         if receptors == 0:
             return 0
+        #print(concentration)
+        #print(dissocociationConstant)
         prob = concentration/(dissocociationConstant+concentration)
+        #print(prob)
+        #print()
         return np.random.binomial(receptors, prob, 1)[0]
 
         #for i in range(receptors):
@@ -27,12 +43,14 @@ def calculateBoundKinetic(receptors, concentration, dissocociationConstant, newR
         mean = receptors * prob
         #print()
         #print(prob)
-        #print(receptors)
+        #print("------------------------------------H--------------------------------")
         flag = True
         while(flag):
             if mean == 0:
                 return 0
             sample = np.random.normal(mean, std, 1)[0]
+            #print(receptors)
+            # print(sample)
             if sample >= 0 and sample < receptors:
                 #print(round(sample))
                 return round(sample)
@@ -55,7 +73,6 @@ def highest(arr):
 
 #should be based on how much is already in the cell
 def calculateAbsorbtion(concentration, rate):
-    #print(rate)
     return math.floor(rate * concentration)
 
 def createPositionHash(length):
@@ -109,6 +126,7 @@ def plotAllCells(testEnviornment, run):
     for i in range(len(allCells)):
         xAxis.append(i + 1)
     plt.bar(xAxis, allCells, color = ["blue"])
+    print("Cells/runCells"+str(run)+".png")
     plt.savefig("Cells/runCells"+str(run)+".png")
     plt.clf()
 
@@ -386,4 +404,308 @@ def heatMap(X,Y,Z,divisions, limit, brought_max, min, useMax, xlabel, ylabel, he
     plt.tight_layout()
     plt.show()
     return max
+
+def threeDmap(inputX, inputY, Z):
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    from matplotlib.ticker import LinearLocator
+    import numpy as np
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    # Make data.
+    Xs = np.array(inputX)
+    Ys = np.array(inputY)
+    Xs, Ys = np.meshgrid(Xs,Ys)
+    Z1 = []
+    for i in range(len(Xs)):
+        newZ = []
+        for j in range(len(Ys)):
+            newZ.append(Z[i][j])
+        Z1.append(newZ)
+    Zs = np.array(Z1)
+
+    surf = ax.plot_surface(Xs, Ys, Zs, cmap=cm.coolwarm,linewidth=0, antialiased=False)
+    ax.zaxis.set_major_locator(LinearLocator(10))
+    # A StrMethodFormatter is used automatically
+    ax.zaxis.set_major_formatter('{x:.02f}')
+    #ax.set_zlim(3, 8)
+    ax.set_ylabel("Noise (as Portion of Binomal Variance)")
+    ax.set_xlabel("Cell Stress")
+    ax.set_zlabel("Growth")
+
+
+    fig.colorbar(surf, shrink=0.5, aspect=5)
+    plt.show()
+
+def MI2D2D(X1, X2, Y1, Y2, bins):
+    def matchBinPos(binPos, y):
+        for i in range(len(binPos) - 1):
+            if y >= binPos[i] and y < binPos[i + 1]:
+                return i
+
+    def list_empty(shapeArr, instaniate=None):
+        arr = []
+        for i in range(shapeArr[0]):
+            obj = instaniate.copy()
+            arr.append(obj)
+        if len(shapeArr) == 1:
+            return arr
+        newShapeArr = shapeArr[1:len(shapeArr)]
+        for i, a in enumerate(arr):
+            arr[i] = list_empty(newShapeArr, instaniate)
+        return arr
+
+    def entropy1d(data, edges):
+        # sum over bins -p(bin)*log2(p(bin)))
+        prob_arr = np.zeros(len(edges) - 1)
+        for dat in data:
+            prob_arr[matchBinPos(edges, dat)] += 1
+        prob_arr /= len(data)
+        sum1 = 0.0
+        for prob in prob_arr:
+            if prob > 0:
+                sum1 += prob * math.log(prob, 2)
+        sum1 = sum1 * -1
+        return sum1
+
+    def createBinPos(data, bins):
+        max_dat = max(data)
+        min_dat = min(data)
+        epsilon = math.fabs(0.01 * ((max_dat - min_dat) / bins))
+        return np.linspace(min_dat - epsilon, max_dat + epsilon, bins + 1)
+
+    def entropy2d(data1, data2, edges1, edges2):
+        prob_arr1 = np.zeros(len(edges1) - 1)
+        prob_arr2 = np.zeros(len(edges2) - 1)
+        for dat in data1:
+            prob_arr1[matchBinPos(edges1, dat)] += 1
+        for dat in data2:
+            prob_arr2[matchBinPos(edges2, dat)] += 1
+        if len(data1) > 0:
+            prob_arr1 /= len(data1)
+        if len(data2) > 0:
+            prob_arr2 /= len(data2)
+        sum1 = 0.0
+        for x in prob_arr1:
+            for y in prob_arr2:
+                if x * y > 0:
+                    sum1 += x * y * math.log(x * y, 2)
+        sum1 = sum1 * -1
+        return sum1
+
+    dat_arr = list_empty([bins, bins,2], [])
+    binPosY1 = createBinPos(Y1, bins)
+    binPosY2 = createBinPos(Y2, bins)
+
+    for i, y in enumerate(Y1):
+        i_index = matchBinPos(binPosY1, y)
+        j_index = matchBinPos(binPosY2, Y2[i])
+        dat_arr[i_index][j_index][0].append(X1[i])
+        dat_arr[i_index][j_index][1].append(X2[i])
+
+    X1Edges = createBinPos(X1, bins)
+    X2Edges = createBinPos(X2, bins)
+    HX = entropy2d(np.asarray(X1), np.asarray(X2), X1Edges, X2Edges)
+    HXgivenY = 0.0
+    Y_prob, Yedges1, Yedges2 = np.histogram2d(Y1, Y2, bins, density = True)
+    binwidthx = Yedges1[1] - Yedges1[0]
+    binwidthy = Yedges2[1] - Yedges2[0]
+    Y_prob = Y_prob*binwidthx*binwidthy
+    for i, dat_arr_x in enumerate(dat_arr):
+        for j, dat_arrxy in enumerate(dat_arr_x):
+            HXgivenY += Y_prob[i][j]*entropy2d(np.asarray(dat_arrxy[0]), np.asarray(dat_arrxy[1]), X1Edges, X2Edges)
+
+    return HX-HXgivenY, HX, HXgivenY
+
+
+def list_empty(shapeArr, instaniate=None):
+    primitive = (int, str, bool, float)
+
+    def is_primitive(thing):
+        return isinstance(thing, primitive)
+    arr = []
+    for i in range(shapeArr[0]):
+        obj = instaniate
+        if not is_primitive(instaniate):
+            obj = instaniate.copy()
+        arr.append(obj)
+    if len(shapeArr) == 1:
+        return arr
+    newShapeArr = shapeArr[1:len(shapeArr)]
+    for i, a in enumerate(arr):
+        arr[i] = list_empty(newShapeArr, instaniate)
+    return arr
+
+
+def MI2D1D(X1,X2,Y,bins):
+    def matchBinPos(binPos, y):
+        for i in range(len(binPos) - 1):
+            if y >= binPos[i] and y < binPos[i + 1]:
+                return i
+
+    def list_empty(shapeArr, instaniate=None):
+        arr = []
+        for i in range(shapeArr[0]):
+            obj = instaniate.copy()
+            arr.append(obj)
+        if len(shapeArr) == 1:
+            return arr
+        newShapeArr = shapeArr[1:len(shapeArr)]
+        for i, a in enumerate(arr):
+            arr[i] = list_empty(newShapeArr, instaniate)
+        return arr
+
+    def entropy1d(data, edges):
+        # sum over bins -p(bin)*log2(p(bin)))
+        prob_arr = np.zeros(len(edges) - 1)
+        for dat in data:
+            prob_arr[matchBinPos(edges, dat)] += 1
+        prob_arr /= len(data)
+        sum1 = 0.0
+        for prob in prob_arr:
+            if prob > 0:
+                sum1 += prob * math.log(prob, 2)
+        sum1 = sum1 * -1
+        return sum1
+
+    def createBinPos(data, bins):
+        max_dat = max(data)
+        min_dat = min(data)
+        epsilon = math.fabs(0.01 * ((max_dat - min_dat) / bins))
+        return np.linspace(min_dat - epsilon, max_dat + epsilon, bins + 1)
+
+    def entropy2d(data1, data2, edges1, edges2):
+        prob_arr1 = np.zeros(len(edges1) - 1)
+        prob_arr2 = np.zeros(len(edges2) - 1)
+        for dat in data1:
+            prob_arr1[matchBinPos(edges1, dat)] += 1
+        for dat in data2:
+            prob_arr2[matchBinPos(edges2, dat)] += 1
+        if len(data1) > 0:
+            prob_arr1 /= len(data1)
+        if len(data2) > 0:
+            prob_arr2 /= len(data2)
+        sum1 = 0.0
+        for x in prob_arr1:
+            for y in prob_arr2:
+                if x * y > 0:
+                    sum1 += x * y * math.log(x * y, 2)
+        sum1 = sum1 * -1
+        return sum1
+
+    dat_arr = list_empty([bins,2], [])
+    binPos = createBinPos(Y, bins)
+
+    for i, y in enumerate(Y):
+
+        i_index = matchBinPos(binPos, y)
+        dat_arr[i_index][0].append(X1[i])
+        dat_arr[i_index][1].append(X2[i])
+
+    X1Edges = createBinPos(X1, bins)
+    X2Edges = createBinPos(X2, bins)
+    HX = entropy2d(np.asarray(X1), np.asarray(X2), X1Edges, X2Edges)
+    HXgivenY = 0.0
+    Y_prob, edges = np.histogram(Y, bins, density = True)
+    binwidth = edges[1] - edges[0]
+    Y_prob = Y_prob*binwidth
+    for i, y in enumerate(dat_arr):
+        HXgivenY += Y_prob[i]*entropy2d(np.asarray(y[0]), np.asarray(y[1]), X1Edges, X2Edges)
+
+    return HX-HXgivenY, HX, HXgivenY
+
+def getTodaysDate():
+    return date.today()
+
+def createSingleDirectory(prepath, name):
+    path = prepath +'/'+ name
+    isPath = os.path.isdir(path)
+    if not isPath:
+        os.mkdir(path)
+
+def createDirectory(run):
+    today = date.today()
+    path = "Data/" + str(today) + "/" + run
+    isPath = os.path.isdir("Data/" + str(today))
+    if not isPath:
+        os.mkdir("Data/" + str(today))
+    isPath = os.path.isdir(path)
+    if not isPath:
+        os.mkdir(path)
+    return str(today)
+
+def saveDataDate(run, date, dataName, data_array, compress):
+    path = "Data/" + date + "/" + run
+    isPath = os.path.isdir("Data/" + date)
+    if not isPath:
+        os.mkdir("Data/" + date)
+    isPath = os.path.isdir(path)
+    if not isPath:
+        os.mkdir(path)
+    file_name =dataName + "_"+ str(datetime.datetime.now().time()).replace(":", "_")
+    full_uncompressed_path = path + "/" +file_name + ".bin"
+    full_compressed_path = path + "/" +file_name + ".gz"
+    with open(full_uncompressed_path, 'wb') as f:
+        pickle.dump(data_array, f)
+    if compress:
+        f_in = open(full_uncompressed_path, mode = 'rb')
+        open(full_compressed_path, "w").close()
+        f_out = gzip.open(full_compressed_path,  mode='wb', compresslevel=9, encoding=None, errors=None, newline=None)
+        f_out.writelines(f_in)
+        f_out.close()
+        f_in.close()
+        os.remove(full_uncompressed_path)
+        return full_compressed_path
+    else:
+        return full_uncompressed_path
+
+def loadDataDate(file_name, compressed, remove = False, removeCompress = False):
+    path = ""
+    if compressed:
+        with gzip.open(file_name, 'rb') as f:
+            file_content = f.read()
+        tmpFileName = os.path.splitext(file_name)[0] + "tmp.bin"
+        tmp = open(tmpFileName, "wb")
+        tmp.write(file_content)
+        tmp.close()
+        with open(tmpFileName, 'rb') as f:
+            new_data = pickle.load(f)
+        path = tmpFileName
+    else:
+        with open(file_name, 'rb') as f:
+            new_data = pickle.load(f)
+        path = file_name
+    if remove:
+        os.remove(path)
+    if removeCompress and compressed:
+        os.remove(file_name)
+    return new_data, path
+
+def createGifBar(config, arr, celllocs, name):
+    print("creating gif for: " + name)
+    x = range(len(arr[0][0]))
+    ims = []
+    index = math.ceil(len(arr)/200)
+
+    for i in range(0, len(arr), index):
+        currTime = (i*config.simParams.simTimeStep)
+        plt.clf()
+        plt.ylim([0,100])
+        plt.bar(x, arr[i][0], width=1, color = 'blue')
+        plt.bar(x, arr[i][1], width=1, color = 'orange')
+        plt.bar(x, celllocs[i], width = 1, color = 'red')
+        plt.title("Time: " + str(currTime))
+        plt.xlabel("Location")
+        plt.ylabel("Concentration / Cell Count")
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        ims.append(buf)
+
+    ims2 = []
+    for buf in ims:
+        buf.seek(0)
+        ims2.append(imageio.imread(buf))
+        buf.close()
+
+    imageio.mimsave('sim_gifs/' + name + '.gif', ims2)
+
 
