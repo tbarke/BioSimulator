@@ -10,7 +10,7 @@ import run
 import outputAnalysis
 
 c_presets = configuration.configuration()
-t = " h"
+t = " h "
 example_configuration = "Data/2023-02-06/manaFromHeavenPresets/single/config.cfg"
 #load in example config_file
 c_presets.readConfig(example_configuration)
