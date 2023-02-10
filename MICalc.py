@@ -155,11 +155,10 @@ class MICalc(object):
         return binnedABlrs
 
     #currently used H(X) calculation
-    def returnSingleEntropy(self, data, fullArr):
+    def returnSingleEntropy(self, data, fullArr, k):
         if len(data) < 1:
             return 0
-        datak = 20
-        binned = self.binarrSingle(data, datak, fullArr)
+        binned = self.binarrSingle(data, k, fullArr)
         #width = self.getw(data,datak)
         sum = 0.0
         for i in range(len(binned)):
@@ -198,9 +197,9 @@ class MICalc(object):
         return probabilities
 
     #currently used H(X|Y) calculation
-    def singleEntropyXgivenY(self, x, y):
-        xk = 30
-        yk = 30
+    def singleEntropyXgivenY(self, x, y, k):
+        xk = k
+        yk = k
         binnedY = self.bins(yk, y)
         allArr = []
         for i in range(yk):
@@ -213,7 +212,7 @@ class MICalc(object):
         Yprobs = self.binProbability(binnedY, y, yk)
         ret = 0.0
         for i in range(len(allArr)):
-            ret += self.returnSingleEntropy(allArr[i], x)*Yprobs[i]
+            ret += self.returnSingleEntropy(allArr[i], x, k)*Yprobs[i]
         return ret
 
     def entropyABlrgivenZ(self, xal, xbl, xar, xbr, yal, ybl, yar, ybr, XAlbins, XBlbins, XArbins, XBrbins, YAlbins, YBlbins, YArbins, YBrbins):
@@ -293,17 +292,29 @@ class MICalc(object):
         return HAB - HABgivenZ
 
     #assuming data is independent array of data
-    def AltMI(self, dataX, dataY):
+    def AltMI(self, dataX, dataY, k):
         HXGY = 0.0
         tot_entr = 0.0
         tot_entrXY = 0.0
         for i in range(len(dataX)):
-            entr = self.returnSingleEntropy(dataX[i], dataX[i])
+            #print(str(i) + ": MI calc")
+            entr = self.returnSingleEntropy(dataX[i], dataX[i], k)
             tot_entr = tot_entr + entr
-            entrY = self.singleEntropyXgivenY(dataX[i], dataY[i])
+            #print(str(i) + ": single entropy done")
+            entrY = self.singleEntropyXgivenY(dataX[i], dataY[i], k)
+            #print(str(i) + ": single entropy(x given y) done")
             tot_entrXY = tot_entrXY + entrY
             HXGY += entr - entrY
         return [HXGY, tot_entr, tot_entrXY]
+
+    def MI_Y2DX(self, dataX, dataY, k):
+        #dataY is a list of movement values
+        #dataX is a list of two lists (first is AR-AL) second is (BR-BL) external cocentrations
+        #H(Y) - H(Y|X)
+        #find H(Y)
+        entrHY = self.returnSingleEntropy(dataY, dataY, k)
+        #find H(Y|X)
+
 
     def entropy_allX(self, dataX):
         entr = 0.0

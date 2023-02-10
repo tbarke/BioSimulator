@@ -3,6 +3,7 @@ import utils
 import math
 import copy
 import random
+import matplotlib.pyplot as plt
 
 class enviornment(object):
     #enviornment parameters: length, cells, cell positions, concentrations
@@ -12,8 +13,8 @@ class enviornment(object):
 
     distancetraveled = 0
 
-    space = 10000
-    lowSpace = 9000
+    space = 2000
+    lowSpace = 1000
 
     def findCurrentCellCount(self):
         allCells = self.positionHash
@@ -22,22 +23,23 @@ class enviornment(object):
             sum += len(allCells[i])
         return sum
 
-    def __init__(self, length, Aconcentrations, Bconcentrations, DiffusionCoe, setOfCells, cellPositions, largestID, newRand, Cconcentrations):
+    def __init__(self, length, Aconcentrations, Bconcentrations,Cconcentrations, setOfCells, cellPositions, newRand, config):
+        self.config = config
+        self.locationStep = config.simParams.locationStep
         self.positionHash = utils.createPositionHash(length)
         for i in range(len(cellPositions)):
             self.positionHash[cellPositions[i]].append(setOfCells[i])
         self.time = 0
         self.Aconcentrations = Aconcentrations
-        print(len(Aconcentrations))
         self.Bconcentrations = Bconcentrations
+
         self.Cconcentrations = Cconcentrations
 
-        self.Adiffusion = DiffusionCoe #1x^2/time = 1^2/1 = 1
-        self.Bdiffusion = DiffusionCoe #1x^2/time = 1^2/1 = 1
+        self.Adiffusion = config.concParams.diffCoeff #1x^2/time = 1^2/1 = 1
+        self.Bdiffusion = config.concParams.diffCoeff #1x^2/time = 1^2/1 = 1
         self.NumberOfCells = len(setOfCells)
         self.length = length
         self.CellDeaths = 0
-        self.currentID = largestID + 1
         self.totalCellCount = length
         self.totalDivisions = 0
         self.alphaA = utils.highest(Aconcentrations)
@@ -54,11 +56,10 @@ class enviornment(object):
         self.allBoundBr = []
         self.cellVelocities = []
 
-        self.fullDivide = True
+        self.fullDivide = config.cellMetaStats.fullDivide
 
         self.Amol = []
         self.Bmol = []
-        #self.time = -1
         self.mol_times = []
         self.Aconcs = []
         self.Bconcs = []
@@ -74,7 +75,7 @@ class enviornment(object):
 
         self.newRand = newRand
 
-        self.fullDie = True
+        self.fullDie = config.cellMetaStats.fullDie
 
         self.divideLoc = []
 
@@ -92,6 +93,9 @@ class enviornment(object):
         self.Recep_Var_Arr_input = []
         self.Recep_Var_Arr_Output = []
 
+        self.timeStep = config.simParams.simTimeStep
+
+
     def addlogdoubletime(self):
         currentCellCount = self.findCurrentCellCount()
         difference = currentCellCount - self.pastCellCount
@@ -99,12 +103,10 @@ class enviornment(object):
         if difference != 0.0:
             self.logdoublingtimes.append(currentCellCount/difference)
 
-    def addAB(self, magnitude, locA, locB):
-        if locA < 0:
-            locA = self.newRand.getNewInt(0, self.length)
-        if locB < 0:
-            locB = self.newRand.getNewInt(0, self.length)
+    def addA(self, magnitude, locA):
         self.Aconcentrations[locA] += magnitude
+
+    def addB(self, magnitude, locB):
         self.Bconcentrations[locB] += magnitude
 
     def absorbAB(self, position, A, B):
@@ -125,15 +127,15 @@ class enviornment(object):
             self.Bconcentrations[position + 1] = newB2
 
     def runCell(self, position, cell):
-
         self.Amol.append(cell.Amol + cell.ATP)
         self.Bmol.append(cell.Bmol + cell.ATP)
         self.mol_times.append(self.time)
         self.divides.append(0)
         self.Aconcs.append(self.Aconcentrations[position])
         self.Bconcs.append(self.Bconcentrations[position])
-        left = (position - 1) % self.length
-        right = (position + 1) % self.length
+
+        left = (position - round(1/self.locationStep)) % math.floor(self.length)
+        right = (position + round(1/self.locationStep)) % math.floor(self.length)
         self.allGradientsAl.append(self.Aconcentrations[left])
         self.allGradientsBl.append(self.Bconcentrations[left])
         self.allGradientsAr.append(self.Aconcentrations[right])
@@ -143,11 +145,11 @@ class enviornment(object):
 
         self.divideLoc.append(0)
 
-        [absorbA, absorbB] = cell.Absorb(self.Aconcentrations[left], self.Aconcentrations[right], self.Bconcentrations[left], self.Bconcentrations[right])
+        [absorbA, absorbB] = cell.Absorb(self.Aconcentrations[left], self.Aconcentrations[right], self.Bconcentrations[left], self.Bconcentrations[right], self.timeStep)
         self.Aabsorbed += absorbA
         self.Babsorbed += absorbB
 
-        velocity = cell.velocity(self.Aconcentrations[left], self.Aconcentrations[right], self.Bconcentrations[left], self.Bconcentrations[right], self.alphaA, self.alphaB)
+        velocity = cell.velocity(self.Aconcentrations[left], self.Aconcentrations[right], self.Bconcentrations[left], self.Bconcentrations[right], self.alphaA, self.alphaB,self.timeStep )
 
         self.allLocations.append(position)
 
@@ -172,7 +174,7 @@ class enviornment(object):
         self.Breceptors.append(cell.Brec)
         cell.changeReceptors()
 
-        if cell.consumption(velocity, self.fullDie) == False:
+        if cell.consumption(velocity, self.fullDie, self.timeStep) == False:
             self.divideLoc.append(0)
             self.Amol.append(cell.Amol + cell.ATP)
             self.Bmol.append(cell.Bmol + cell.ATP)
@@ -217,7 +219,7 @@ class enviornment(object):
             return False
         prob = self.lowSpace/cellCount
         for cells in AllCells:
-            newLen = math.floor(len(AllCells[cells])*prob)
+            newLen = math.ceil(len(AllCells[cells])*prob)
             newArr = self.changeLen(AllCells[cells], newLen)
             AllCells[cells] = newArr
         newLen = 0
@@ -237,9 +239,15 @@ class enviornment(object):
                 #print("made it here")
                 #it died
                 if arr[1] == -1:
+                    #print("died")
                     self.deaths += 1
                     continue
-                newPosition = (pos + arr[0]) % self.length
+
+                newPosition = (pos + round(arr[0])) % math.floor(self.length)
+                #if newPosition < 0:
+                #    newPosition = 0
+                #if newPosition >= self.length:
+                #    newPosition = self.length-1
                 movingCell.incrementDis(math.fabs(newPosition - pos))
                 #it didn't divide
                 if arr[1] == 0:
@@ -247,6 +255,7 @@ class enviornment(object):
                     newPositionHash[newPosition].append(movingCell)
                 #it divided
                 if arr[1] == 1:
+                    #print("divided")
                     #self.divides.append(1)
                     self.divides_per_time += 1
                     self.divisions += 1
@@ -263,68 +272,52 @@ class enviornment(object):
                     generation = stats[7]
                     distancetraveled = stats[8]
 
-                    cell1 = cell.cell(Arec, Brec, MaxRec, Amol, Bmol, ATP, biomass, generation, distancetraveled, self.currentID, self.newRand)
-                    cell1.AbsorbtionRate = movingCell.AbsorbtionRate
-                    cell1.ReceptorConsumptionRate = movingCell.ReceptorConsumptionRate
-                    cell1.survivalCost = movingCell.survivalCost
-                    cell1.VelocityMultiplier = movingCell.VelocityMultiplier
-                    cell1.mutate = movingCell.mutate
-                    cell1.decisiontype = movingCell.decisiontype
-                    cell1.noise = movingCell.noise
-                    cell1.receptor_mode = movingCell.receptor_mode
+
+                    cell1 = cell.cell(newRand=1, Arec = Arec, Brec = Brec, Amol = Amol, Bmol = Bmol, config = self.config)
                     newPositionHash[newPosition].append(cell1)
 
                     if self.fullDivide:
-                        cell2 = cell.cell(Arec, Brec, MaxRec, Amol, Bmol, ATP, biomass, generation, distancetraveled, self.currentID + 1, self.newRand)
-                        cell2.AbsorbtionRate = movingCell.AbsorbtionRate
-                        cell2.ReceptorConsumptionRate = movingCell.ReceptorConsumptionRate
-                        cell2.survivalCost = movingCell.survivalCost
-                        cell2.VelocityMultiplier = movingCell.VelocityMultiplier
-                        cell2.mutate = movingCell.mutate
-                        cell2.decisiontype = movingCell.decisiontype
-                        cell2.noise = movingCell.noise
-                        cell2.receptor_mode = movingCell.receptor_mode
+                        cell2 = cell.cell(newRand=1, Arec = Arec, Brec = Brec, Amol = Amol, Bmol = Bmol, config = self.config)
                         newPositionHash[newPosition].append(cell2)
 
                     self.totalCellCount += 1
                     self.totalDivisions += 1
-                    self.currentID += 2
-        Recep_Var_Arr_input = []
-        Recep_Var_Arr_Output = []
-        for i in range(401):
-            Recep_Var_Arr_input.append([])
-            Recep_Var_Arr_Output.append([])
+        #Recep_Var_Arr_input = []
+        #Recep_Var_Arr_Output = []
+        #for i in range(401):
+            #Recep_Var_Arr_input.append([])
+            #Recep_Var_Arr_Output.append([])
 
-            Recep_Var_Arr_input[i].append([])
-            Recep_Var_Arr_input[i].append([])
-            Recep_Var_Arr_input[i].append([])
-            Recep_Var_Arr_input[i].append([])
+            #Recep_Var_Arr_input[i].append([])
+            #Recep_Var_Arr_input[i].append([])
+            #Recep_Var_Arr_input[i].append([])
+            #Recep_Var_Arr_input[i].append([])
 
-            Recep_Var_Arr_Output[i].append([])
-            Recep_Var_Arr_Output[i].append([])
-            Recep_Var_Arr_Output[i].append([])
-            Recep_Var_Arr_Output[i].append([])
+            #Recep_Var_Arr_Output[i].append([])
+            #Recep_Var_Arr_Output[i].append([])
+            #Recep_Var_Arr_Output[i].append([])
+            #Recep_Var_Arr_Output[i].append([])
 
-        for pos in self.positionHash:
-            cellslen = len(self.positionHash[pos])
-            for i in range(cellslen):
-                currCell = self.positionHash[pos][i]
-                Arec = currCell.Arec
+
+        #for pos in self.positionHash:
+            #cellslen = len(self.positionHash[pos])
+            #for i in range(cellslen):
+                #currCell = self.positionHash[pos][i]
+                #Arec = currCell.Arec
                 #print(Arec)
                 #print(len(Recep_Var_Arr_input))
                 #print(len(Recep_Var_Arr_input[Arec]))
-                Recep_Var_Arr_input[Arec][0].append(currCell.AconLeft)
-                Recep_Var_Arr_input[Arec][1].append(currCell.AconRight)
-                Recep_Var_Arr_input[Arec][2].append(currCell.BconLeft)
-                Recep_Var_Arr_input[Arec][3].append(currCell.BconRight)
+                #Recep_Var_Arr_input[Arec][0].append(currCell.AconLeft)
+                #Recep_Var_Arr_input[Arec][1].append(currCell.AconRight)
+                #Recep_Var_Arr_input[Arec][2].append(currCell.BconLeft)
+                #Recep_Var_Arr_input[Arec][3].append(currCell.BconRight)
 
-                Recep_Var_Arr_Output[Arec][0].append(currCell.leftBoundArec)
-                Recep_Var_Arr_Output[Arec][1].append(currCell.rightBoundArec)
-                Recep_Var_Arr_Output[Arec][2].append(currCell.leftBoundBrec)
-                Recep_Var_Arr_Output[Arec][3].append(currCell.rightBoundBrec)
-
-        self.Recep_Var_Arr_input = Recep_Var_Arr_input
-        self.Recep_Var_Arr_Output = Recep_Var_Arr_Output
+                #Recep_Var_Arr_Output[Arec][0].append(currCell.leftBoundArec)
+                #Recep_Var_Arr_Output[Arec][1].append(currCell.rightBoundArec)
+                #Recep_Var_Arr_Output[Arec][2].append(currCell.leftBoundBrec)
+                #Recep_Var_Arr_Output[Arec][3].append(currCell.rightBoundBrec)
+        #self.Recep_Var_Arr_input = Recep_Var_Arr_input
+        #self.Recep_Var_Arr_Output = Recep_Var_Arr_Output
 
         self.positionHash = newPositionHash
         self.time += 1
@@ -334,31 +327,45 @@ class enviornment(object):
     def runConcentration(self, difusionCo):
         newAcon = []
         newBcon = []
-        for i in range(self.length):
-            if i == 0:
-                newAcon.append(self.Aconcentrations[i] + (difusionCo *
-                                                        (self.Aconcentrations[i + 1] - self.Aconcentrations[i])))
-                newBcon.append(self.Bconcentrations[i] + (difusionCo *
-                                                        (self.Bconcentrations[i + 1] - self.Bconcentrations[i])))
-                continue
-            elif i == self.length - 1:
-                newAcon.append(self.Aconcentrations[i] + (difusionCo *
-                                                          (self.Aconcentrations[i - 1] - self.Aconcentrations[i])))
-                newBcon.append(self.Bconcentrations[i] + (difusionCo *
-                                                          (self.Bconcentrations[i - 1] - self.Bconcentrations[i])))
-                continue
+        for i in range(len(self.Aconcentrations)):
+            #if i == 0:
+            #    newAcon.append(self.Aconcentrations[i] + (difusionCo *(self.Aconcentrations[i + 1] - self.Aconcentrations[i])))
+            #    newBcon.append(self.Bconcentrations[i] + (difusionCo *(self.Bconcentrations[i + 1] - self.Bconcentrations[i])))
+            #    continue
+            #elif i == len(self.Aconcentrations) - 1:
+            #    newAcon.append(self.Aconcentrations[i] + (difusionCo *
+            #                                              (self.Aconcentrations[i - 1] - self.Aconcentrations[i])))
+            #    newBcon.append(self.Bconcentrations[i] + (difusionCo *
+            #                                              (self.Bconcentrations[i - 1] - self.Bconcentrations[i])))
+            #    continue
+            prev = i-1
+            curr = i
+            next = i+1
+            if prev == -1:
+                prev = math.floor(self.length)-1
+            if next == math.floor(self.length):
+                next = 0
             newAcon.append(self.Aconcentrations[i] + (difusionCo *
-                                                      (self.Aconcentrations[i+1] - 2*self.Aconcentrations[i] + self.Aconcentrations[i-1])))
+                                                      (self.Aconcentrations[next] - 2*self.Aconcentrations[curr] + self.Aconcentrations[prev])))
             newBcon.append(self.Bconcentrations[i] + (difusionCo *
-                                                      (self.Bconcentrations[i+1] - 2*self.Bconcentrations[i] + self.Bconcentrations[i-1])))
+                                                      (self.Bconcentrations[next] - 2*self.Bconcentrations[curr] + self.Bconcentrations[prev])))
+
         self.Aconcentrations = newAcon
         self.Bconcentrations = newBcon
 
     def runConcentrationAdjusted(self):
-        TimesRun = math.ceil(self.Adiffusion/0.5)
-        adjustedAdiffusion = 1.0/TimesRun
+        #TimesRun = math.ceil(self.Adiffusion/self.locationStep)
+        adjustedAdiffusion = (self.Adiffusion/(self.locationStep*self.locationStep)) * self.timeStep
+        #print(self.Adiffusion)
+        #print()
+        #print("adjusted ")
+        #print(adjustedAdiffusion)
+        #TimesRun = math.ceil(self.Adiffusion / self.locationStep)
+        TimesRun = math.floor(adjustedAdiffusion/0.1)
         for i in range(TimesRun):
-            self.runConcentration(adjustedAdiffusion)
+            #plt.plot(self.Aconcentrations)
+            #plt.show()
+            self.runConcentration(adjustedAdiffusion/TimesRun)
 
     def toString(self):
         ret = ""
@@ -482,12 +489,12 @@ class enviornment(object):
             for j in cells:
                 recs.append(int(j.Arec/2))
                 concs.append(self.Aconcentrations[(i-1) % self.length])
-                recs.append(int(j.Arec / 2))
-                concs.append(self.Aconcentrations[(i+1) % self.length])
-                recs.append(int(j.Brec / 2))
-                concs.append(self.Bconcentrations[(i-1) % self.length])
-                recs.append(int(j.Brec / 2))
-                concs.append(self.Bconcentrations[(i+1) % self.length])
+                #recs.append(int(j.Arec / 2))
+                #concs.append(self.Aconcentrations[(i+1) % self.length])
+                #recs.append(int(j.Brec / 2))
+                #concs.append(self.Bconcentrations[(i-1) % self.length])
+                #recs.append(int(j.Brec / 2))
+                #concs.append(self.Bconcentrations[(i+1) % self.length])
         return recs, concs
 
     def giveDivisions(self):
@@ -558,3 +565,62 @@ class enviornment(object):
                 Aconc.append(self.Aconcentrations[pos])
                 Bconc.append(self.Bconcentrations[pos])
         return Amol1, Bmol1, Aconc, Bconc
+
+    def getAllStats(self):
+        titles = []
+        data = []
+        titles.append("All_Cells")
+        data.append(self.giveAllCells())
+
+        titles.append("All_Locations")
+        data.append(self.giveALlCellLocations())
+
+        titles.append("B_concentration")
+        data.append(self.Bconcentrations)
+
+        titles.append("A_concentration")
+        data.append(self.Aconcentrations)
+        return [titles, data]
+
+    def getRatioA(self):
+        A_inter_s = []
+        B_inter_s = []
+        AL_x_s = []
+        AR_x_s = []
+        BL_x_s = []
+        BR_x_s = []
+
+        AL_y_s = []
+        AR_y_s = []
+        BL_y_s = []
+        BR_y_s = []
+        for pos in self.positionHash:
+            for i in range(len(self.positionHash[pos])):
+                curr_cell = self.positionHash[pos][i]
+                A_inter_s.append(curr_cell.Amol)
+                B_inter_s.append(curr_cell.Bmol)
+                left = (pos - math.floor(1)) % math.floor(self.length)
+                right = (pos + math.floor(1)) % math.floor(self.length)
+                AL_x_s.append(self.Aconcentrations[left])
+                AR_x_s.append(self.Aconcentrations[right])
+
+                BL_x_s.append(self.Bconcentrations[left])
+                BR_x_s.append(self.Bconcentrations[right])
+
+                AL_y_s.append(curr_cell.leftBoundArec)
+                AR_y_s.append(curr_cell.rightBoundArec)
+                BL_y_s.append(curr_cell.leftBoundBrec)
+                BR_y_s.append(curr_cell.rightBoundBrec)
+
+        return A_inter_s, B_inter_s, AL_x_s, AR_x_s, BL_x_s, BR_x_s, AL_y_s, AR_y_s, BL_y_s, BR_y_s
+
+    def giveCellInArr(self):
+        ret = []
+        for i in range(self.length):
+            cells = self.positionHash[i]
+            for j in cells:
+                ret.append(i)
+        return ret
+
+
+
