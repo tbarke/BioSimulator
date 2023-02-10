@@ -31,4 +31,9 @@ Different Cell Enviornments:
 The cells operate in different enviornments. One is defined by the von Mises distribution (close to a normal distribution but with a periodic variance) Another is the constant uphill downhill enviornment which applies a constant gradient to the cell at any given time. Another is the constant conentration which applies a constant concentration everywhere in the enviornment. The last is the Mana From Heaven model which is created by randomly dropping concentraitons of molecule types that diffuse and degrade at a particular rate.
 
 Cell Strategies:
+There are many cell strategies that the simulation can be run. The main two that will be highlighed here are the equal receptor strategy (named "non" in the simulation). It simply sees how many receptors are bound on eitehr side of the cell and moves in at the same magnitude as the diffence between right and left. The Adaptive type (named "measured" in the simulation) allocates its receptors according to what molecule type the cell needs at any given time.
 
+-----------------------------------
+More information about the simulation can be found in this publication:
+
+Barker TS, Pierobon M, Thomas PJ. Subjective Information and Survival in a Simulated Biological System. Entropy (Basel). 2022 May 2;24(5):639. doi: 10.3390/e24050639. PMID: 35626524; PMCID: PMC9142001.
