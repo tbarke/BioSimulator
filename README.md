@@ -5,11 +5,9 @@ Main Run Script is testbench.py that will run default settings for a simulation 
 
 for a generic explanation of the simulation and cell strategy, see below
 
-The main simulation settings, cell strategy types, enviornments, stress rates
+The main simulation settings, cell strategy types, enviornments, stress rates are set in testbench.py. It will simulate it for a certain time and record and save the cell locations, concentrations, bound receptors, cell counts, and other parameters in the Data folder according to the data and cell run name. It will then take in cell signal information and compute the informaiton rate estimates and cell growth estimates. Finally it will output the results in the Results folder into .pdfs for the simulation parameters.
 
-
-
-
+Other functions possible create a .gif file of the simulation concentrations and cells over simulated time, create a heat map of internal molecule counts, etc.
 
 -----------------------------------
 Cell Simulation:
@@ -31,3 +29,6 @@ The cell stress is defined as the survival cost of the cell per time divided by 
 
 Different Cell Enviornments:
 The cells operate in different enviornments. One is defined by the von Mises distribution (close to a normal distribution but with a periodic variance) Another is the constant uphill downhill enviornment which applies a constant gradient to the cell at any given time. Another is the constant conentration which applies a constant concentration everywhere in the enviornment. The last is the Mana From Heaven model which is created by randomly dropping concentraitons of molecule types that diffuse and degrade at a particular rate.
+
+Cell Strategies:
+
