@@ -1,5 +1,6 @@
 import configparser
 import math
+import re
 
 class configuration(object):
 
@@ -102,6 +103,8 @@ class configuration(object):
             self.noiseArray = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
             self.enviornmentArray = ["vonMises", "constUpDown", "constant", "manaFromHeaven"]
             self.cellStrategiesArray = ["non", "measured", "counter", "adjusted", "drastic", "drastic2"]
+            self.cellRatioAEmphasis = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            self.cellRatioAEmphasisFlag = True
             self.cellStrategiesArrayFlag = True
             self.enviornmentArrayFlag = True
             self.runStress = True
@@ -119,118 +122,46 @@ class configuration(object):
         self.runStats = self.RunStats()
         self.cellStats = self.CellStats()
 
-    def convert_array(self, stri):
-        if stri[0] != '[' or stri[len(stri)-1] != ']':
-            raise Exception("\"" + stri + "\": is not an array")
+    def parse_string(self, input_str):
+        input_str = input_str.strip()
+        # Check for integer
+        if re.match(r'^[-+]?\d+$', input_str):
+            return int(input_str)
 
-        sub_stri = stri[1:len(stri)-1]
-        str_arr = sub_stri.split(',')
-        ret = []
-        if sub_stri.strip() == "":
-            return ret
-        for s in str_arr:
-            try:
-                ret.append(float(s.strip()))
-            except ValueError:
-                ret.append(s)
-        return ret
+        # Check for float
+        if re.match(r'^[-+]?(\d+(\.\d*)?|\.\d+)$', input_str):
+            return float(input_str)
 
-    def readConfig(self, filename):
+        # Check for list of integers or floats
+        if re.match(r'^\[(?:\s*[-+]?(?:\d+(?:\.\d*)?|\.\d+)\s*,?)*\]$', input_str):
+            values_str = re.findall(r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)', input_str)
+            values = [int(x) if x.isdigit() else float(x) for x in values_str]
+            return values
+
+        # Check for boolean
+        if input_str.lower() == 'true':
+            return True
+        if input_str.lower() == 'false':
+            return False
+
+        # Default to returning the input string as a string
+        return input_str
+
+    def readConfig(self, filename, supressWarnings = True):
         config = configparser.ConfigParser()
         config.read(filename)
 
-        self.runStats.stressArray = self.convert_array(config.get('RunStats', 'stressArray'))
-        self.runStats.noiseArray = self.convert_array(config.get('RunStats', 'noiseArray'))
-        self.runStats.runStress = config.get('RunStats', 'runStress') == "True"
-        self.runStats.runDetermine = config.get('RunStats', 'runNoise') == "True"
-        self.runStats.cellStrategiesArrayFlag = config.get('RunStats', 'cellStrategiesArrayFlag') == "True"
-        self.runStats.enviornmentArrayFlag = config.get('RunStats', 'enviornmentArrayFlag') == "True"
-        self.runStats.stressArray = config.get('RunStats', 'runDetermine') == "True"
-        self.runStats.beginningRandInt = int(config.get('RunStats', 'beginningRandInt'))
-        self.runStats.save = config.get('RunStats', 'save')  == "True"
-        self.runStats.enviornmentArray = self.convert_array(config.get('RunStats', 'enviornmentArray'))
-        self.runStats.cellStrategiesArray = self.convert_array(config.get('RunStats', 'cellStrategiesArray'))
-
-        self.cellStats.Arec = int(config.get('CellStats', 'Arec'))
-        self.cellStats.Brec = int(config.get('CellStats', 'Brec'))
-        self.cellStats.maxRec = int(config.get('CellStats', 'maxRec'))
-        self.cellStats.Amol = int(config.get('CellStats', 'Amol'))
-        self.cellStats.Bmol = int(config.get('CellStats', 'Bmol'))
-        self.cellStats.ATP = int(config.get('CellStats', 'ATP'))
-        self.cellStats.biomass = int(config.get('CellStats', 'biomass'))
-        self.cellStats.generation = int(config.get('CellStats', 'generation'))
-        self.cellStats.distTrav = int(config.get('CellStats', 'distTrav'))
-        self.cellStats.startID = int(config.get('CellStats', 'startID'))
-
-        self.runOutputFlags.save = config.get('RunOutputFlags', 'save')  == "True"
-        self.runOutputFlags.compressSave = config.get('RunOutputFlags', 'compressSave')  == "True"
-        self.runOutputFlags.totalMI = config.get('RunOutputFlags', 'totalMI')  == "True"
-        self.runOutputFlags.averageMI = config.get('RunOutputFlags', 'averageMI')  == "True"
-        self.runOutputFlags.compositeMI = config.get('RunOutputFlags', 'compositeMI')  == "True"
-        self.runOutputFlags.weightedMI = config.get('RunOutputFlags', 'weightedMI')  == "True"
-        self.runOutputFlags.averageGrowth = config.get('RunOutputFlags', 'averageGrowth')  == "True"
-        self.runOutputFlags.SIAsVar = config.get('RunOutputFlags', 'SIAsVar')  == "True"
-        self.runOutputFlags.SIAsEntropy = config.get('RunOutputFlags', 'SIAsEntropy')  == "True"
-
-        self.outputFlags.totalcells = config.get('OutputFlags', 'totalcells') == "True"
-        self.outputFlags.totalReceptors = config.get('OutputFlags', 'totalReceptors') == "True"
-        self.outputFlags.boundReceptors = config.get('OutputFlags', 'boundReceptors') == "True"
-        self.outputFlags.internalAB = config.get('OutputFlags', 'internalAB') == "True"
-        self.outputFlags.totalConcs = config.get('OutputFlags', 'totalConcs') == "True"
-        self.outputFlags.cellLocations = config.get('OutputFlags', 'cellLocations') == "True"
-        self.outputFlags.cellMovement = config.get('OutputFlags', 'cellMovement') == "True"
-        self.outputFlags.concProfile = config.get('OutputFlags', 'concProfile') == "True"
-
-        self.cellMetaStats.stress = float(config.get('CellMetaStats', 'stress'))
-        self.cellMetaStats.absorptionRate = float(config.get('CellMetaStats', 'absorptionRate'))
-        self.cellMetaStats.receptorConsumptionRate = float(config.get('CellMetaStats', 'receptorConsumptionRate'))
-        self.cellMetaStats.survivalCost = int(config.get('CellMetaStats', 'survivalCost'))
-        self.cellMetaStats.velocityMultiplier = float(config.get('CellMetaStats', 'velocityMultiplier'))
-        self.cellMetaStats.mutate = config.get('CellMetaStats', 'mutate')
-        self.cellMetaStats.decisiontype = config.get('CellMetaStats', 'decisiontype')
-        self.cellMetaStats.noise = float(config.get('CellMetaStats', 'noise'))
-        self.cellMetaStats.dissocociationConstant = float(config.get('CellMetaStats', 'dissocociationConstant'))
-        self.cellMetaStats.receptorMode = config.get('CellMetaStats', 'receptorMode')
-        self.cellMetaStats.combinedPortion = int(config.get('CellMetaStats', 'combinedPortion'))
-        self.cellMetaStats.dividePortion = int(config.get('CellMetaStats', 'dividePortion'))
-        self.cellMetaStats.adaptiveRatio = int(config.get('CellMetaStats', 'adaptiveRatio'))
-        self.cellMetaStats.cellLocations = self.convert_array(config.get('CellMetaStats', 'cellLocations'))
-        self.cellMetaStats.fullDivide = config.get('CellMetaStats', 'fullDivide') == "True"
-        self.cellMetaStats.fullDie = config.get('CellMetaStats', 'fullDie') == "True"
-
-        self.simParams.length = int(config.get('SimParams', 'length'))
-        self.simParams.locationStep = float(config.get('SimParams', 'locationStep'))
-        self.simParams.simTimeStep = float(config.get('SimParams', 'simTimeStep'))
-        self.simParams.simLength = float(config.get('SimParams', 'simLength'))
-        self.simParams.presetA_time = self.convert_array(config.get('SimParams', 'presetA_time'))
-        self.simParams.presetB_time = self.convert_array(config.get('SimParams', 'presetB_time'))
-        self.simParams.presetA_loc = self.convert_array(config.get('SimParams', 'presetA_loc'))
-        self.simParams.presetB_loc = self.convert_array(config.get('SimParams', 'presetB_loc'))
-        self.simParams.presetBool = config.get('SimParams', 'presetBool') == "True"
-        self.simParams.uniformConcStart = config.get('SimParams', 'uniformConcStart') == "True"
-        self.simParams.simulationConcStart = config.get('SimParams', 'simulationConcStart') == "True"
-        self.simParams.lam = float(config.get('SimParams', 'lam'))
-        self.simParams.gamma = float(config.get('SimParams', 'gamma'))
-        self.simParams.aknoght = int(config.get('SimParams', 'aknoght'))
-        self.simParams.presetSave = config.get('SimParams', 'presetSave') == "True"
-
-        self.concParams.diffCoeff = int(config.get('ConcParams', 'diffCoeff'))
-        self.concParams.constantConc = int(config.get('ConcParams', 'constantConc'))
-        self.concParams.uphillHigh = int(config.get('ConcParams', 'uphillHigh'))
-        self.concParams.uphillLow = int(config.get('ConcParams', 'uphillLow'))
-        self.concParams.concProfile = config.get('ConcParams', 'concProfile')
-        self.concParams.arp = config.get('ConcParams', 'arp')
-        self.concParams.repeatFrequency = float(config.get('ConcParams', 'repeatFrequency'))
-        self.concParams.magnitude = float(config.get('ConcParams', 'magnitude'))
-        self.concParams.locationA = int(config.get('ConcParams', 'locationA'))
-        self.concParams.locationB = int(config.get('ConcParams', 'locationB'))
-        self.concParams.locationC = int(config.get('ConcParams', 'locationC'))
-        self.concParams.concDiffuse = config.get('ConcParams', 'concDiffuse')
-        self.concParams.VonMisesVar = float(config.get('ConcParams', 'VonMisesVar'))
-        self.concParams.VonMisesMagnitude = float(config.get('ConcParams', 'VonMisesMagnitude'))
-        self.concParams.VonMisesAOffset = float(config.get('ConcParams', 'VonMisesAOffset'))
-        self.concParams.VonMisesBOffset = float(config.get('ConcParams', 'VonMisesBOffset'))
-        self.concParams.VonMisesCOffset = float(config.get('ConcParams', 'VonMisesCOffset'))
+        mapNames = {'cellMetaStats': 'CellMetaStats', 'cellStats': 'CellStats', 'concParams': 'ConcParams', 'outputFlags': 'OutputFlags', 'runOutputFlags': 'RunOutputFlags', 'runStats': 'RunStats','simParams': 'SimParams'}
+        paramOrg = self.__dict__
+        for key1, value1 in paramOrg.items():
+            paramnames = value1.__dict__
+            for key2 in paramnames:
+                try:
+                    paramnames[key2] = self.parse_string(config.get(mapNames[key1], key2))
+                except configparser.NoOptionError:
+                    if not supressWarnings:
+                        print("error could not load in: " + mapNames[key1] + "." + key2 + ", Probably loading in from an old version config. Using default Value.")
+        return
 
     def writeConfig(self, filename):
         config = configparser.ConfigParser()
@@ -244,6 +175,8 @@ class configuration(object):
                               'runNoise': self.runStats.runDetermine,
                               'runDetermine': self.runStats.stressArray,
                               'beginningRandInt': self.runStats.beginningRandInt,
+                              'cellRatioAEmphasis': self.runStats.cellRatioAEmphasis,
+                              'cellRatioAEmphasisFlag': self.runStats.cellRatioAEmphasisFlag,
                               'save': self.runStats.save
         }
 

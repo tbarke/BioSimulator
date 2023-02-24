@@ -73,7 +73,7 @@ def highest(arr):
 
 #should be based on how much is already in the cell
 def calculateAbsorbtion(concentration, rate):
-    return math.floor(rate * concentration)
+    return rate * concentration
 
 def createPositionHash(length):
     hash = {0: []}
