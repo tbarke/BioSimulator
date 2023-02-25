@@ -3,6 +3,7 @@ import random
 import randomClass
 import math
 import utils
+import itertools
 import output
 import matplotlib.pyplot as plt
 
@@ -126,7 +127,7 @@ def indRun(config):
     print(out[1])
     print(out[2])
 
-def runIndividual(run, date, config, stress = None, strat = None, envornment = None):
+def runIndividual(run, date, config, stress = None, strat = None, envornment = None, Aratio = None):
     if stress:
         config.cellMetaStats.absorptionRate = 1 / (stress / config.cellMetaStats.survivalCost)
         config.cellMetaStats.stress = stress
@@ -134,6 +135,9 @@ def runIndividual(run, date, config, stress = None, strat = None, envornment = N
         config.cellMetaStats.decisiontype = strat
     if envornment:
         config.concParams.concProfile = envornment
+    if Aratio:
+        #TODO
+        pass
     Sim = simulation.simulation(config)
     return(Sim.test(config, run, date))
 
@@ -147,13 +151,42 @@ def testRun(config, runName, date):
     #config.runStats.runNoise
 
     date = utils.createDirectory(runName)
+    run_Param_list = []
 
     if config.runStats.cellStrategiesArrayFlag:
         print("Running Strategies: " + str(config.runStats.cellStrategiesArray))
+        run_Param_list.append(config.runStats.cellStrategiesArray)
     if config.runStats.enviornmentArrayFlag:
         print("Running Enviornments: " + str(config.runStats.enviornmentArray))
+        run_Param_list.append(config.runStats.enviornmentArray)
     if config.runStats.runStress:
         print("Running Stress Array: " + str(config.runStats.stressArray))
+        run_Param_list.append(config.runStats.stressArray)
+    if config.runStats.cellRatioAEmphasisFlag:
+        print("Running A Ratio Array: " + str(config.runStats.cellRatioAEmphasis))
+        run_Param_list.append(config.runStats.cellRatioAEmphasis)
+
+    combinations = itertools.product(*run_Param_list)
+    for combo in combinations:
+        print(combo)
+        stress = None
+        strat = None
+        envornment = None
+        Aratio = None
+
+        print_str = ""
+        if config.runStats.cellStrategiesArrayFlag:
+            strat = combo[0]
+        if config.runStats.enviornmentArrayFlag:
+            envornment = combo[1]
+        if config.runStats.runStress:
+            stress = combo[2]
+        if config.runStats.cellRatioAEmphasisFlag:
+            Aratio = combo[3]
+
+    if len(combinations) == 0:
+        #TODO run single
+        pass
 
     #need a better way to do this
     ouputFileObjects = []
