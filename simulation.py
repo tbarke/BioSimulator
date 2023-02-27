@@ -33,18 +33,17 @@ class simulation(object):
 
     def VonMises(self, var, maximum, offset, length, locationStep):
         arr = []
-        kappa = 1/var
+        kappa = 1 / var
         mu = (2 * math.pi / length) * offset
         bessel = (special.iv(0, kappa))
         sum = 0.0
         increment = 2 * math.pi / length
         for i in range(length):
-            index = i - length/2
+            index = i - length / 2
             x = index * increment
             numerator = math.exp(kappa * math.cos(x - mu))
-            arr.append(numerator / (2 * math.pi * bessel))
+            arr.append((numerator / (2 * math.pi * bessel)) * maximum)
             sum += numerator / (2 * math.pi * bessel)
-        arr = (arr / sum)*maximum/locationStep
         return arr
 
     #def uniform(self, ):

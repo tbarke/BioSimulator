@@ -142,7 +142,7 @@ def runIndividual(run, date, config, stress = None, strat = None, envornment = N
     return(Sim.test(config, run, date))
 
 
-def testRun(config, runName, date):
+def testRun(config, runName, date, specificName = None):
     #stress_arr = [.01, .02, .03, .04, .05, .06, .07, .08, .09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.35, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.2, 1.4, 1.6, 1.8, 2.0]
     #stress_arr = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
     #cell_strategies = ["non", "measured", "counter", "adjusted", "drastic"]
@@ -242,8 +242,17 @@ def testRun(config, runName, date):
             ouputFileObjects.append(runIndividual(run, date, config, stress=stress))
     else:
         #single run
-        Sim = simulation.simulation(config)
-        ouputFileObjects.append(Sim.test(config, runName + "/" + "single", date))
+        stress = config.cellMetaStats.stress
+        strat = str(config.cellMetaStats.decisiontype)
+        envior = str(config.concParams.concProfile)
+        print("Stress: " + str(stress) + " Strategy: " + strat + " Enviornment: " + envior)
+        run = runName + "/" + str(stress) + "_" + strat + "_" + envior
+        if specificName:
+            run += "_" + specificName
+        ouputFileObjects.append(runIndividual(run, date, config, stress=stress, strat=strat, envornment=envior))
+
+        #Sim = simulation.simulation(config)
+        #ouputFileObjects.append(Sim.test(config, runName + "/" + "single", date))
 
     return ouputFileObjects
 
