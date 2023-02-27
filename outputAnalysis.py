@@ -1,8 +1,10 @@
+import colors
 import utils
 import math
 import MICalc
 import glob
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def reduceSize(arr, k):
@@ -239,3 +241,50 @@ def createFigures(strats, stresses, enviorns, finalDat, run, save = True):
             plt.savefig('Results/' + date + '/' + run + '/Growth_' + enviorns[i] + '.pdf')
         else:
             plt.show()
+
+def createFigureMIGrowth(growths, MI_moves, MI_trad, Strategies, stresses):
+    color_Scheme = ["Blue", "Red"]
+
+    max_stress = len(stresses)
+    for i in range(len(growths)):
+        for j in range(len(growths[i])-1):
+            plt.plot([MI_moves[i][j], MI_moves[i][j+1]], [growths[i][j], growths[i][j+1]], color = colors.findcolor(max_stress,0,color_Scheme,j ), zorder=3)
+        plt.scatter(MI_moves[i], growths[i], label = Strategies[i], zorder=3)
+
+
+    from scipy import interpolate
+    for i in range(len(stresses)):
+        y = np.array(growths)[:, i]
+        x = np.array(MI_moves)[:, i]
+
+        model4 = np.poly1d(np.polyfit(x, y, 4))
+        polyline = np.linspace(0, 10, 100)
+        print(x)
+        print(y)
+        #tck, u = interpolate.splprep([x, y], s = 0)
+        #plt.plot(polyline, model4(polyline), label = str(stresses[i]))
+        #xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
+        #plt.plot(x, y, label = str(stresses[i]))
+        #plt.plot(x, y, 'o', xnew, ynew)
+
+
+    plt.xlabel("MI")
+    plt.ylabel("Growth")
+    plt.legend()
+    plt.grid(zorder=0)
+    #plt.xlim([0, 2])
+    plt.ylim([-2, 5])
+    plt.show()
+
+def createFigureMIGrowthStress(growths, MI_moves, MI_trad, Strategies, stresses, stress):
+    j = stresses.index(stress)
+    for i in range(len(growths)):
+        plt.scatter(MI_moves[i][j], growths[i][j], label = Strategies[i], zorder=3)
+
+    plt.xlabel("MI")
+    plt.ylabel("Growth")
+    plt.legend()
+    plt.grid(zorder=0)
+    plt.xlim([0, .2])
+    plt.ylim([-2, 2])
+    plt.show()
