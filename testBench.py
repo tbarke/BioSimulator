@@ -118,8 +118,8 @@ c.runOutputFlags.compressSave = True
 c.simParams.simTimeStep = .05
 c.cellMetaStats.stress = 0.05
 c.cellMetaStats.absorptionRate = 1/c.cellMetaStats.stress
-c.cellMetaStats.survivalCost = 250
-c.concParams.VonMisesMagnitude = 100
+c.cellMetaStats.survivalCost = 100
+c.concParams.VonMisesMagnitude = 200
 c.runOutputFlags.compressSave = False
 # set Cell strategy
 c.cellMetaStats.decisiontype = "non"
@@ -128,8 +128,8 @@ c.cellMetaStats.decisiontype = "non"
 c.runStats.runStress = False
 c.runStats.cellStrategiesArrayFlag = True
 c.runStats.enviornmentArrayFlag = False
-c.runStats.cellRatioAEmphasisFlag = False
-c.runStats.cellRatioAIntEmphasisFlag = False
+c.runStats.cellRatioAEmphasisFlag = True
+c.runStats.cellRatioAIntEmphasisFlag = True
 # TODO: implement below
 c.runStats.runDetermine = False
 
@@ -151,7 +151,7 @@ c.outputFlags.cellMovement = True
 #set simulation meta parameters
 c.runStats.stressArray = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 c.runStats.enviornmentArray = ["vonMises"]
-c.runStats.cellStrategiesArray = ["non", "measured", "adjusted", "drastic", "drastic2"]
+c.runStats.cellStrategiesArray = ["ratio"]
 
 
 meta = utils.loadMetaData()
@@ -159,7 +159,7 @@ meta = utils.loadMetaData()
 c.runStats.saveDir = meta["path"]
 
 # give run name
-runName = '2-28_outputTest'
+runName = 'ratioA_IntA'
 date = str(utils.getTodaysDate())
 
 output_objects, output_files = run.testRun(c, runName, date)
