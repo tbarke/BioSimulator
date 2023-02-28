@@ -60,6 +60,8 @@ class configuration(object):
             self.fullDivide = True
             self.fullDie = True
             self.dissocociationConstant = 2.0
+            self.Aratio = 0.5
+            self.AratioInt = 0.5
 
     class OutputFlags:
         def __init__(self):
@@ -75,7 +77,7 @@ class configuration(object):
     class RunOutputFlags:
         def __init__(self):
             self.save = True
-            self.compressSave = True
+            self.compressSave = False
             self.totalMI = True
             self.averageMI = True
             self.compositeMI = True
@@ -104,7 +106,9 @@ class configuration(object):
             self.enviornmentArray = ["vonMises", "constUpDown", "constant", "manaFromHeaven"]
             self.cellStrategiesArray = ["non", "measured", "counter", "adjusted", "drastic", "drastic2"]
             self.cellRatioAEmphasis = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            self.cellRatioAIntEmphasis = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             self.cellRatioAEmphasisFlag = True
+            self.cellRatioAIntEmphasisFlag = True
             self.cellStrategiesArrayFlag = True
             self.enviornmentArrayFlag = True
             self.runStress = True
@@ -112,6 +116,7 @@ class configuration(object):
             self.runDetermine = False
             self.beginningRandInt = 1
             self.save = True
+            self.saveDir = "Data"
 
     def __init__(self):
         self.simParams = self.SimParams()
@@ -160,8 +165,7 @@ class configuration(object):
                     paramnames[key2] = self.parse_string(config.get(mapNames[key1], key2))
                 except configparser.NoOptionError:
                     if not supressWarnings:
-                        print("error could not load in: " + mapNames[key1] + "." + key2 + ", Probably loading in from an old version config. Using default Value.")
-        return
+                        print("Warning: could not load in: " + mapNames[key1] + "." + key2 + ", Probably loading in from an old version config. Using default Value.")
 
     def writeConfig(self, filename):
         config = configparser.ConfigParser()
@@ -177,7 +181,10 @@ class configuration(object):
                               'beginningRandInt': self.runStats.beginningRandInt,
                               'cellRatioAEmphasis': self.runStats.cellRatioAEmphasis,
                               'cellRatioAEmphasisFlag': self.runStats.cellRatioAEmphasisFlag,
-                              'save': self.runStats.save
+                              'cellRatioAIntEmphasis': self.runStats.cellRatioAIntEmphasis,
+                              'cellRatioAIntEmphasisFlag': self.runStats.cellRatioAIntEmphasisFlag,
+                              'save': self.runStats.save,
+                              'saveDir' : self.runStats.saveDir
         }
 
         config['CellStats'] = {'Arec': self.cellStats.Arec,
@@ -228,6 +235,8 @@ class configuration(object):
                                     'cellLocations': self.cellMetaStats.cellLocations,
                                     'fullDivide': self.cellMetaStats.fullDivide,
                                     'fullDie': self.cellMetaStats.fullDie,
+                                    'Aratio': self.cellMetaStats.Aratio,
+                                    'AratioInt': self.cellMetaStats.AratioInt,
                                     'dissocociationConstant': self.cellMetaStats.dissocociationConstant
                                     }
 
