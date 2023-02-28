@@ -98,6 +98,8 @@ class cell(object):
                 vel = 2*(self.rightBoundBrec - self.leftBoundBrec)
         elif self.decisiontype == "wrong":
             vel = 2 *((wrong_rightArec + wrong_rightBrec) - (wrong_leftArec + wrong_leftBrec))
+        elif self.decisiontype == "ratio":
+            vel = 20 * ((self.rightBoundBrec - self.leftBoundBrec) * self.config.cellMetaStats.AratioInt * A_ratio) + ((self.rightBoundArec - self.leftBoundArec) * (1-self.config.cellMetaStats.AratioInt)* (1-A_ratio))
         #rightBound = utils.calculateBoundKinetic(rightBrec+rightArec, BconRight+AconRight, dissocociation, self.newRand, self.noise, self.receptor_mode)
         #leftBound = utils.calculateBoundKinetic(leftBrec+leftArec, BconLeft+AconLeft, dissocociation, self.newRand, self.noise, self.receptor_mode)
 
@@ -197,6 +199,9 @@ class cell(object):
                 ratio = 0.5
             #self.Brec = math.floor(self.MaxReceptors*ratio*(1-self.adaptive_ratio))+math.floor(self.MaxReceptors*0.5*self.adaptive_ratio)
             self.Brec = math.floor(self.MaxReceptors*ratio)
+            self.Arec = self.MaxReceptors - self.Brec
+        if self.decisiontype == "ratio":
+            self.Brec = math.floor(self.MaxReceptors*self.config.cellMetaStats.Aratio)
             self.Arec = self.MaxReceptors - self.Brec
         if self.decisiontype == "counter":
             if float(interA+interB) != 0:

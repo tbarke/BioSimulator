@@ -219,8 +219,8 @@ def testRun(config, runName, date, specificName = None):
                 run_str += '_'
             print_str += "Aratio: " + str(Aratio) + " "
             run_str += str(Aratio)
-        if config.runStats.cellRatioAEmphasisFlag:
-            Aratio = combo[4]
+        if config.runStats.cellRatioAIntEmphasisFlag:
+            AratioInt = combo[4]
             if len(run_str) > 0:
                 run_str += '_'
             print_str += "AratioInt: " + str(AratioInt) + " "
