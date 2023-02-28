@@ -212,19 +212,19 @@ def testRun(config, runName, date, specificName = None):
             if len(run_str) > 0:
                 run_str += '_'
             print_str +=  "Stress: " + str(stress) + " "
-            run_str += str(stress)
+            run_str += "Stress"+ str(stress)
         if config.runStats.cellRatioAEmphasisFlag:
             Aratio = combo[3]
             if len(run_str) > 0:
                 run_str += '_'
             print_str += "Aratio: " + str(Aratio) + " "
-            run_str += str(Aratio)
+            run_str += "Aratio" + str(Aratio)
         if config.runStats.cellRatioAIntEmphasisFlag:
             AratioInt = combo[4]
             if len(run_str) > 0:
                 run_str += '_'
             print_str += "AratioInt: " + str(AratioInt) + " "
-            run_str += str(AratioInt)
+            run_str += "AratioInt" + str(AratioInt)
         print(print_str)
         run = runName + "/" + run_str + "_" + utils.getTime()
         if specificName:
