@@ -616,28 +616,43 @@ def MI2D1D(X1,X2,Y,bins):
 def getTodaysDate():
     return date.today()
 
+def getTime():
+    from datetime import datetime
+    now = datetime.now()
+    return now.strftime("%H_%M_%S")
+
 def createSingleDirectory(prepath, name):
     path = prepath +'/'+ name
     isPath = os.path.isdir(path)
     if not isPath:
         os.mkdir(path)
 
-def createDirectory(run):
-    today = date.today()
-    path = "Data/" + str(today) + "/" + run
-    isPath = os.path.isdir("Data/" + str(today))
+def createDirectory(run, date, config):
+    path = config.runStats.saveDir + "/" + str(date) + "/" + run
+    isPath = os.path.isdir(config.runStats.saveDir + "/" + str(date))
     if not isPath:
-        os.mkdir("Data/" + str(today))
+        os.mkdir(config.runStats.saveDir + "/" + str(date))
     isPath = os.path.isdir(path)
     if not isPath:
         os.mkdir(path)
-    return str(today)
+    return str(date)
 
-def saveDataDate(run, date, dataName, data_array, compress):
-    path = "Data/" + date + "/" + run
-    isPath = os.path.isdir("Data/" + date)
+def saveData(dir, data, fileName):
+    full_path = dir + "/" + fileName
+    with open(full_path, 'wb') as f:
+        pickle.dump(data, f)
+    return full_path
+
+def loadData(filename):
+    with open(filename, 'rb') as f:
+        new_data = pickle.load(f)
+    return new_data
+
+def saveDataDate(run, date, dataName, data_array, compress, prePath):
+    path = prePath + "/" + date + "/" + run
+    isPath = os.path.isdir(prePath + "/" + date)
     if not isPath:
-        os.mkdir("Data/" + date)
+        os.mkdir(prePath + "/" + date)
     isPath = os.path.isdir(path)
     if not isPath:
         os.mkdir(path)
@@ -707,5 +722,29 @@ def createGifBar(config, arr, celllocs, name):
         buf.close()
 
     imageio.mimsave('sim_gifs/' + name + '.gif', ims2)
+
+def loadMetaData(filename = None):
+    metaDict = {}
+
+    def Map(line):
+        class metaFileException(Exception):
+            pass
+        arr = line.split('=')
+        if len(arr) != 2:
+            print("error: meta format is not correct on line: " + line)
+            raise metaFileException()
+
+        metaDict[arr[0]] = arr[1]
+
+
+    if not filename:
+        filename = "SimMeta.txt"
+    with open(filename, "r") as file:
+        count = 0
+        for line in file:
+            stripped_line = line.replace(" ", "").replace("\t", "").replace("\n", "")
+            Map(stripped_line)
+
+    return metaDict
 
 

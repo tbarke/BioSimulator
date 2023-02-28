@@ -127,7 +127,7 @@ def indRun(config):
     print(out[1])
     print(out[2])
 
-def runIndividual(run, date, config, stress = None, strat = None, envornment = None, Aratio = None):
+def runIndividual(run, date, config, stress = None, strat = None, envornment = None, Aratio = None, AratioInt = None):
     if stress:
         config.cellMetaStats.absorptionRate = 1 / (stress / config.cellMetaStats.survivalCost)
         config.cellMetaStats.stress = stress
@@ -136,125 +136,103 @@ def runIndividual(run, date, config, stress = None, strat = None, envornment = N
     if envornment:
         config.concParams.concProfile = envornment
     if Aratio:
-        #TODO
-        pass
+        config.cellMetaStats.Aratio = Aratio
+        config.cellStats.Arec = math.floor(Aratio*config.cellStats.maxRec)
+        config.cellStats.Brec = config.cellStats.maxRec - config.cellStats.Arec
+    if AratioInt:
+        config.cellMetaStats.AratioInt = AratioInt
     Sim = simulation.simulation(config)
     return(Sim.test(config, run, date))
 
 
 def testRun(config, runName, date, specificName = None):
-    #stress_arr = [.01, .02, .03, .04, .05, .06, .07, .08, .09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.35, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.2, 1.4, 1.6, 1.8, 2.0]
-    #stress_arr = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-    #cell_strategies = ["non", "measured", "counter", "adjusted", "drastic"]
-    #cell_strategies = ["drastic2"]
-    #TODO
-    #config.runStats.runNoise
 
-    date = utils.createDirectory(runName)
+    utils.createDirectory(runName, date, config)
+    utils.createDirectory(runName + "/OutputProfiles", date, config)
     run_Param_list = []
 
     if config.runStats.cellStrategiesArrayFlag:
         print("Running Strategies: " + str(config.runStats.cellStrategiesArray))
         run_Param_list.append(config.runStats.cellStrategiesArray)
+    else:
+        run_Param_list.append([None])
+
     if config.runStats.enviornmentArrayFlag:
         print("Running Enviornments: " + str(config.runStats.enviornmentArray))
         run_Param_list.append(config.runStats.enviornmentArray)
+    else:
+        run_Param_list.append([None])
+
     if config.runStats.runStress:
         print("Running Stress Array: " + str(config.runStats.stressArray))
         run_Param_list.append(config.runStats.stressArray)
+    else:
+        run_Param_list.append([None])
+
     if config.runStats.cellRatioAEmphasisFlag:
         print("Running A Ratio Array: " + str(config.runStats.cellRatioAEmphasis))
         run_Param_list.append(config.runStats.cellRatioAEmphasis)
+    else:
+        run_Param_list.append([None])
+
+    if config.runStats.cellRatioAIntEmphasisFlag:
+        print("Running A Ratio Int Array: " + str(config.runStats.cellRatioAIntEmphasis))
+        run_Param_list.append(config.runStats.cellRatioAIntEmphasis)
+    else:
+        run_Param_list.append([None])
 
     combinations = itertools.product(*run_Param_list)
+    outputFiles = []
+    outputObj = []
+
+    count = 0
     for combo in combinations:
+        count += 1
         print(combo)
         stress = None
         strat = None
-        envornment = None
+        envior = None
         Aratio = None
+        AratioInt = None
 
         print_str = ""
+        run_str = ""
         if config.runStats.cellStrategiesArrayFlag:
             strat = combo[0]
+            print_str += "Strategy: " + strat + " "
+            run_str += strat
         if config.runStats.enviornmentArrayFlag:
-            envornment = combo[1]
+            envior = combo[1]
+            if len(run_str) > 0:
+                run_str += '_'
+            print_str += "Enviornment: " + envior + " "
+            run_str += envior
         if config.runStats.runStress:
             stress = combo[2]
+            if len(run_str) > 0:
+                run_str += '_'
+            print_str +=  "Stress: " + str(stress) + " "
+            run_str += str(stress)
         if config.runStats.cellRatioAEmphasisFlag:
             Aratio = combo[3]
-
-    if len(combinations) == 0:
-        #TODO run single
-        pass
-
-    #need a better way to do this
-    ouputFileObjects = []
-    if config.runStats.cellStrategiesArrayFlag:
-        if config.runStats.enviornmentArrayFlag:
-            if config.runStats.runStress:
-                #running all three
-                for strat in config.runStats.cellStrategiesArray:
-                    for envior in config.runStats.enviornmentArray:
-                        for stress in config.runStats.stressArray:
-                            print("Stress: " + str(stress) + " Strategy: " + strat + " Enviornment: " + envior)
-                            run = runName + "/" + str(stress) + "_" + strat + "_" + envior
-                            ouputFileObjects.append(runIndividual(run, date, config, stress=stress, strat=strat, envornment= envior))
-            else:
-                #run strategy and enviornment
-                for strat in config.runStats.cellStrategiesArray:
-                    for envior in config.runStats.enviornmentArray:
-                        print("Strategy: " + strat + " Enviornment: " + envior)
-                        run = runName + "/" + strat + "_" + envior
-                        ouputFileObjects.append(runIndividual(run, date, config, strat=strat, envornment=envior))
-        elif config.runStats.runStress:
-            for strat in config.runStats.cellStrategiesArray:
-                for stress in config.runStats.stressArray:
-                    print("Stress: " + str(stress) + " Strategy: " + strat)
-                    run = runName + "/" + str(stress) + "_" + strat
-                    ouputFileObjects.append(runIndividual(run, date, config, stress=stress, strat=strat))
-        else:
-            #run strategy
-            for strat in config.runStats.cellStrategiesArray:
-                print("Strategy: " + strat)
-                run = runName + "/" + strat
-                ouputFileObjects.append(runIndividual(run, date, config, strat=strat))
-
-    elif config.runStats.enviornmentArrayFlag:
-        if config.runStats.runStress:
-            #run strategy enviornment and stress
-            for envior in config.runStats.enviornmentArray:
-                for stress in config.runStats.stressArray:
-                    print("Stress: " + str(stress) + " Enviornment: " + envior)
-                    run = runName + "/" + str(stress)+ "_" + envior
-                    ouputFileObjects.append(runIndividual(run, date, config, stress=stress, envornment=envior))
-        else:
-            #run enviornment
-            for envior in config.runStats.enviornmentArray:
-                print("Stress: "  + " Enviornment: " + envior)
-                run = runName + "/" + envior
-                ouputFileObjects.append(runIndividual(run, date, config, envornment=envior))
-    elif config.runStats.runStress:
-        #run stress
-        for stress in config.runStats.stressArray:
-            print("Stress: " + str(stress))
-            run = runName + "/" + str(stress)
-            ouputFileObjects.append(runIndividual(run, date, config, stress=stress))
-    else:
-        #single run
-        stress = config.cellMetaStats.stress
-        strat = str(config.cellMetaStats.decisiontype)
-        envior = str(config.concParams.concProfile)
-        print("Stress: " + str(stress) + " Strategy: " + strat + " Enviornment: " + envior)
-        run = runName + "/" + str(stress) + "_" + strat + "_" + envior
+            if len(run_str) > 0:
+                run_str += '_'
+            print_str += "Aratio: " + str(Aratio) + " "
+            run_str += str(Aratio)
+        if config.runStats.cellRatioAEmphasisFlag:
+            Aratio = combo[4]
+            if len(run_str) > 0:
+                run_str += '_'
+            print_str += "AratioInt: " + str(AratioInt) + " "
+            run_str += str(AratioInt)
+        print(print_str)
+        run = runName + "/" + run_str + "_" + utils.getTime()
         if specificName:
             run += "_" + specificName
-        ouputFileObjects.append(runIndividual(run, date, config, stress=stress, strat=strat, envornment=envior))
-
-        #Sim = simulation.simulation(config)
-        #ouputFileObjects.append(Sim.test(config, runName + "/" + "single", date))
-
-    return ouputFileObjects
+        runResults = runIndividual(run, date, config, stress=stress, strat=strat, envornment=envior, Aratio=Aratio, AratioInt=AratioInt)
+        outputObj.append(runResults[0])
+        outputFiles.append(runResults[1])
+    return outputObj, outputFiles
 
 def testRunConcs(SimParams, ConcParams, CellMetaStats, CellStats, Celllocations, EnviornmentParams, flag):
     randomSeed = random.randint(1, 10000)

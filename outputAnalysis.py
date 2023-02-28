@@ -14,7 +14,7 @@ def reduceSize(arr, k):
     return new_arr
 
 def calcGrowth(file, config):
-    growth_dat = utils.loadDataDate(file, True)
+    growth_dat = utils.loadDataDate(file, False)
     growth = growth_dat[0]
     avg_growth = 0.0
     for i in range(0, len(growth) - 1):
@@ -43,11 +43,11 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, extAB
     move = None
     boundAB = None
     if MITradFlag or MI2d2dFlag or MIMoveFlag:
-        extAB = utils.loadDataDate(extABFile, True)
+        extAB = utils.loadDataDate(extABFile, False)
     if MIMoveFlag:
-        move = utils.loadDataDate(moveFile, True)
+        move = utils.loadDataDate(moveFile, False)
     if MITradFlag or MI2d2dFlag:
-        boundAB = utils.loadDataDate(boundFile, True)
+        boundAB = utils.loadDataDate(boundFile, False)
 
     ext_A = []
     ext_B = []

@@ -745,24 +745,6 @@ class simulation(object):
                 if config.outputFlags.totalcells:
                     cellsAlive = self.SimEnviornment.cellsAlive()
                     totalCells.append(cellsAlive * multiple)
-            """""
-            if not config.simParams.presetBool:
-                if rand1 < muadj:
-                    presetA.append(i)
-                    locationA = random.randint(0, math.floor(self.SimEnviornment.length*(1/self.SimEnviornment.locationStep))-1)
-                    presetA_loc.append(locationA)
-                if rand2 < muadj:
-                    presetB.append(i)
-                    locationB = random.randint(0, math.floor(self.SimEnviornment.length*(1/self.SimEnviornment.locationStep))-1)
-                    presetB_loc.append(locationB)
-            else:
-                for j in range(len(presetA)):
-                    if i == presetA[j]:
-                        self.SimEnviornment.addA(Aknoght / self.SimEnviornment.locationStep, presetA_loc[j])
-                for j in range(len(presetB)):
-                    if i == presetB[j]:
-                        self.SimEnviornment.addB(Aknoght / self.SimEnviornment.locationStep, presetB_loc[j])
-            """""
 
         totalCellsFile = None
         totalReceptorsFile = None
@@ -773,26 +755,28 @@ class simulation(object):
         cellMovementFile = None
         enviornmentConcsFile = None
         if config.outputFlags.totalcells:
-            totalCellsFile = utils.saveDataDate(run, date, "totalCells", totalCells, config.runOutputFlags.compressSave)
+            totalCellsFile = utils.saveDataDate(run, date, "totalCells", totalCells, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.totalReceptors:
-            totalReceptorsFile = utils.saveDataDate(run, date, "totalReceptors", totalReceptors, config.runOutputFlags.compressSave)
+            totalReceptorsFile = utils.saveDataDate(run, date, "totalReceptors", totalReceptors, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.boundReceptors:
-            boundReceptorsFile = utils.saveDataDate(run, date, "boundReceptors", boundReceptors, config.runOutputFlags.compressSave)
+            boundReceptorsFile = utils.saveDataDate(run, date, "boundReceptors", boundReceptors, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.internalAB:
-            internalABFile = utils.saveDataDate(run, date, "internalAB", internalAB, config.runOutputFlags.compressSave)
+            internalABFile = utils.saveDataDate(run, date, "internalAB", internalAB, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.totalConcs:
-            totalConcsFile = utils.saveDataDate(run, date, "totalConcs", totalConcs, config.runOutputFlags.compressSave)
+            totalConcsFile = utils.saveDataDate(run, date, "totalConcs", totalConcs, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.cellLocations:
-            cellLocationsFile = utils.saveDataDate(run, date, "cellLocations", cellLocations, config.runOutputFlags.compressSave)
+            cellLocationsFile = utils.saveDataDate(run, date, "cellLocations", cellLocations, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.cellMovement:
-            cellMovementFile = utils.saveDataDate(run, date, "cellMovement", cellMovement, config.runOutputFlags.compressSave)
+            cellMovementFile = utils.saveDataDate(run, date, "cellMovement", cellMovement, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.concProfile:
-            enviornmentConcsFile = utils.saveDataDate(run, date, "enviornmentConcs", enviornmentConcs, config.runOutputFlags.compressSave)
+            enviornmentConcsFile = utils.saveDataDate(run, date, "enviornmentConcs", enviornmentConcs, config.runOutputFlags.compressSave, config.runStats.saveDir)
 
-        #print("Cells Alive At End: " + str(self.SimEnviornment.cellsAlive()))
-        config.writeConfig("Data/" + date + "/" + run + "/config.cfg")
+        if self.SimEnviornment.cellsAlive() < 100:
+            print("Warning: less than 100 cells alive at the end")
+        config.writeConfig(config.runStats.saveDir + "/" + date + "/" + run + "/config.cfg")
         out = output.output(runName = run,enviornmentConcsFile = enviornmentConcsFile, totalcellsFile = totalCellsFile, totalReceptorsFile = totalReceptorsFile, boundReceptorsFile = boundReceptorsFile, internalABFile = internalABFile, totalConcsFile = totalConcsFile, cellLocationsFile = cellLocationsFile, cellMovementFile = cellMovementFile)
-        return out
+        outPath = out.write(config.runStats.saveDir + "/" + date)
+        return out, outPath
 
     def indtest(self, config, run):
         lam = 0.4
@@ -902,19 +886,19 @@ class simulation(object):
         cellLocationsFile = None
         cellMovementFile = None
         if config.outputFlags.totalcells:
-            totalCellsFile = utils.saveDataDate(run, "totalCells_" + run, totalCells, config.runOutputFlags.compressSave)
+            totalCellsFile = utils.saveDataDate(run, "totalCells_" + run, totalCells, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.totalReceptors:
-            totalReceptorsFile = utils.saveDataDate(run, "totalReceptors_" + run, totalReceptors, config.runOutputFlags.compressSave)
+            totalReceptorsFile = utils.saveDataDate(run, "totalReceptors_" + run, totalReceptors, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.boundReceptors:
-            boundReceptorsFile = utils.saveDataDate(run, "boundReceptors_" + run, boundReceptors, config.runOutputFlags.compressSave)
+            boundReceptorsFile = utils.saveDataDate(run, "boundReceptors_" + run, boundReceptors, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.internalAB:
-            internalABFile = utils.saveDataDate(run, "internalAB_" + run, internalAB, config.runOutputFlags.compressSave)
+            internalABFile = utils.saveDataDate(run, "internalAB_" + run, internalAB, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.totalConcs:
-            totalConcsFile = utils.saveDataDate(run, "totalConcs_" + run, totalConcs, config.runOutputFlags.compressSave)
+            totalConcsFile = utils.saveDataDate(run, "totalConcs_" + run, totalConcs, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.cellLocations:
-            cellLocationsFile = utils.saveDataDate(run, "cellLocations_" + run, cellLocations, config.runOutputFlags.compressSave)
+            cellLocationsFile = utils.saveDataDate(run, "cellLocations_" + run, cellLocations, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.cellMovement:
-            cellMovementFile = utils.saveDataDate(run, "cellMovement_" + run, cellMovement, config.runOutputFlags.compressSave)
+            cellMovementFile = utils.saveDataDate(run, "cellMovement_" + run, cellMovement, config.runOutputFlags.compressSave, config.runStats.saveDir)
         print("Cells Alive At End: " + str(self.SimEnviornment.cellsAlive()))
         out = output.output(totalcellsFile = totalCellsFile, totalReceptorsFile = totalReceptorsFile, boundReceptorsFile = boundReceptorsFile, internalABFile = internalABFile, totalConcsFile = totalConcsFile, cellLocationsFile = cellLocationsFile, cellMovementFile = cellMovementFile)
         return out, allDivisons, allDeaths

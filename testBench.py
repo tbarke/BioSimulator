@@ -8,20 +8,11 @@ import utils
 import configuration
 import run
 import outputAnalysis
+import output
 import math
 from scipy import special
 import matplotlib.pyplot as plt
 import numpy as np
-
-x = [1,2,3,4,5]
-y = [6,7,8,9,10]
-
-plt.plot(x,y)
-plt.show()
-exit()
-
-exit()
-
 
 """""
 #----------------------------
@@ -117,14 +108,6 @@ c.simParams.presetB_time = c_presets.simParams.presetB_time
 c.simParams.presetA_loc = c_presets.simParams.presetA_loc
 c.simParams.presetB_loc = c_presets.simParams.presetB_loc
 
-#set non A or B receptors A/B = [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200]
-A_rec = 200
-specificName = "Arec" + str(A_rec)
-rec_total = 400
-c.cellStats.Arec = A_rec
-c.cellStats.Brec = rec_total - A_rec
-c.cellStats.maxRec = rec_total
-
 #set config flag to save results
 c.runOutputFlags.save = True
 #set simulation time length
@@ -132,17 +115,21 @@ c.simParams.simLength = 20
 #set save compression
 c.runOutputFlags.compressSave = True
 # set simulation time step
-c.simParams.simTimeStep = .01
-c.cellMetaStats.stress = 0.9
+c.simParams.simTimeStep = .05
+c.cellMetaStats.stress = 0.05
 c.cellMetaStats.absorptionRate = 1/c.cellMetaStats.stress
-c.concParams.VonMisesMagnitude = 10
+c.cellMetaStats.survivalCost = 250
+c.concParams.VonMisesMagnitude = 100
+c.runOutputFlags.compressSave = False
 # set Cell strategy
 c.cellMetaStats.decisiontype = "non"
 
 # set meta simulation parameters
 c.runStats.runStress = False
-c.runStats.cellStrategiesArrayFlag = False
+c.runStats.cellStrategiesArrayFlag = True
 c.runStats.enviornmentArrayFlag = False
+c.runStats.cellRatioAEmphasisFlag = False
+c.runStats.cellRatioAIntEmphasisFlag = False
 # TODO: implement below
 c.runStats.runDetermine = False
 
@@ -166,12 +153,23 @@ c.runStats.stressArray = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
 c.runStats.enviornmentArray = ["vonMises"]
 c.runStats.cellStrategiesArray = ["non", "measured", "adjusted", "drastic", "drastic2"]
 
+
+meta = utils.loadMetaData()
+
+c.runStats.saveDir = meta["path"]
+
 # give run name
-runName = 'stress_equal_varRec'
+runName = '2-28_outputTest'
 date = str(utils.getTodaysDate())
 
-#outputs output list type containing output files
-output_files = run.testRun(c, runName, date, specificName)
+output_objects, output_files = run.testRun(c, runName, date)
+utils.saveData(c.runStats.saveDir +"/" + date + "/" + runName + "/OutputProfiles" , output_files, "outputProfilePaths.txt")
+
+bins = 30
+for i, out in enumerate(output_objects):
+    out.calculateMeasures(c, bins)
+    print("finished: " + out.runName)
+    out.write(output_files[i], absolute=True)
 
 exit()
 bins = 30
@@ -181,7 +179,7 @@ enviorns = c.runStats.enviornmentArray
 
 #analyses and saves data (see README.txt for more imformation)
 finalDat = outputAnalysis.getCalcArray(c, runName, date, stresses, strats, enviorns, bins)
-utils.saveDataDate(runName, date,"finalDataSave", finalDat, True)
+utils.saveDataDate(runName, date,"finalDataSave", finalDat, True, c.runStats.saveDir)
 
 # can load in particular data
 #finalDat = utils.loadDataDate("Data/finalDataSave_08_04_00.834293.gz", True)[0]
