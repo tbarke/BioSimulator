@@ -1,6 +1,8 @@
 import math
 import utils
 import numpy as np
+import log
+l = log.log()
 
 class cell(object):
 #cell attributes: A receptors, B receptors, A molecules, B molecules, Bound A receptors, and Bound B receptors

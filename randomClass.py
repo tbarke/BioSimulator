@@ -1,4 +1,6 @@
 import random
+import log
+l = log.log()
 
 class randomClass(object):
 
@@ -20,7 +22,6 @@ class randomClass(object):
 
     def choices(self, arr, probs):
         random.seed(self.currentSeed)
-        #print(self.currentSeed)
         ret = random.choices(arr,probs)
         random.seed(self.currentSeed)
         self.currentSeed = random.randint(1,10000) + 1

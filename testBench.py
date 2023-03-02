@@ -3,6 +3,7 @@
 #Tyler Barker
 #2-10-2023
 """""
+import typing
 
 import utils
 import configuration
@@ -13,6 +14,11 @@ import math
 from scipy import special
 import matplotlib.pyplot as plt
 import numpy as np
+import colors
+import log
+
+dateTime = str(utils.getTodaysDate()) + '_' + utils.getTime()
+l = log.log('Logs/'+dateTime + '.log')
 
 """""
 #----------------------------
@@ -128,8 +134,8 @@ c.cellMetaStats.decisiontype = "non"
 c.runStats.runStress = False
 c.runStats.cellStrategiesArrayFlag = True
 c.runStats.enviornmentArrayFlag = False
-c.runStats.cellRatioAEmphasisFlag = True
-c.runStats.cellRatioAIntEmphasisFlag = True
+c.runStats.cellRatioAEmphasisFlag = False
+c.runStats.cellRatioAIntEmphasisFlag = False
 # TODO: implement below
 c.runStats.runDetermine = False
 
@@ -159,19 +165,92 @@ meta = utils.loadMetaData()
 c.runStats.saveDir = meta["path"]
 
 # give run name
-runName = 'ratioA_IntA'
+runName = 'output_save_test'
 date = str(utils.getTodaysDate())
 
-output_objects, output_files = run.testRun(c, runName, date)
-utils.saveData(c.runStats.saveDir +"/" + date + "/" + runName + "/OutputProfiles" , output_files, "outputProfilePaths.txt")
+#output_objects, output_files = run.testRun(c, runName, date)
+#utils.saveData(c.runStats.saveDir +"/" + date + "/" + runName + "/OutputProfiles" , output_files, "outputProfilePaths.txt")
 
+date = "2023-02-28"
+runName = "ratioA_IntA"
+output_files = utils.loadData(c.runStats.saveDir +"/"+ date+ "/" + runName  + "/OutputProfiles/outputProfilePaths.txt")
+
+
+#TODO needs to be rebuilt
+def refactorfile(file):
+    arr = file.split('/')
+    count = 0
+    for a in arr:
+        count += 1
+        if a == 'Data':
+            break
+    newFile = ''
+    for i in range(count, len(arr), 1):
+        newFile += arr[i]
+        if i != len(arr)-1:
+            newFile += '/'
+    return newFile
+
+output_objects = []
+for i in range(len(output_files)):
+    file = c.runStats.saveDir + '/' + refactorfile(output_files[i])
+    l.log(file)
+    output_files[i] = file
+    o = output.output()
+    o.read(file)
+    output_objects.append(o)
+
+"""""
 bins = 30
 for i, out in enumerate(output_objects):
     out.calculateMeasures(c, bins)
     print("finished: " + out.runName)
-    out.write(output_files[i], absolute=True)
+    print(out.write(output_files[i], absolute=True))
+    #exit()
+    
+"""""
+def d3color(emp_red, emp_blue):
+    color_Scheme1 = ['Black', 'Red']
+    color_Scheme2 = ['Black', 'Blue']
+    color_red = colors.findcolor(1,0,color_Scheme1, emp_red, absolute=False)
+    color_blue = colors.findcolor(1,0,color_Scheme2, emp_blue, absolute=False)
+    color_Scheme3 = [color_red, color_blue]
+    dist = color_blue[2] / (color_red[0] + color_blue[2])
+    color_purp = colors.findcolor(1,0,color_Scheme3, dist)
+    return color_purp
 
-exit()
+
+#ratioA is red
+#ratioint is blue
+colors_plot = []
+MImoves = []
+MIs = []
+MITrad = []
+growths = []
+count = -1
+for i in range(len(c.runStats.cellRatioAEmphasis)):
+    for j in range(len(c.runStats.cellRatioAIntEmphasis)):
+        count += 1
+        if output_objects[count].RunClacOut.MI2D2D != '':
+            colors_plot.append(d3color(c.runStats.cellRatioAEmphasis[i], c.runStats.cellRatioAIntEmphasis[j]))
+            MImoves.append(output_objects[count].RunClacOut.MI2D1D)
+            MIs.append(output_objects[count].RunClacOut.MI2D2D)
+            MITrad.append(output_objects[count].RunClacOut.MItrad)
+            growths.append(output_objects[count].RunClacOut.growth)
+
+plt.scatter(MIs, growths, color = colors_plot)
+plt.scatter(2, 2, color = 'Blue', label = "Internal Ratio")
+plt.scatter(2, 2, color = 'Red', label = "Receptor Ratio")
+plt.xlabel("MI (2D2D)")
+plt.xlim([0, 0.6])
+plt.ylabel("growth")
+plt.ylim([-.1, .25])
+plt.grid()
+plt.legend()
+plt.show()
+
+
+l.exit()
 bins = 30
 stresses = c.runStats.stressArray
 strats = c.runStats.cellStrategiesArray

@@ -6,6 +6,8 @@ import utils
 import itertools
 import output
 import matplotlib.pyplot as plt
+import log
+l = log.log()
 
 def moveTrackRunReceptorIntAB(SimParams, ConcParams, CellMetaStats, CellStats, Celllocations, EnviornmentParams, flag, flag2):
     randomSeed = random.randint(1, 10000)
@@ -19,7 +21,7 @@ def moveTrackRunReceptorIntAB(SimParams, ConcParams, CellMetaStats, CellStats, C
                 Celllocations.append(i)
     CellLocationStats = [Celllocations]
 
-    print(Celllocations)
+    l.log(Celllocations)
 
     Sim = simulation.simulation(ConcParams, CellMetaStats, CellStats, CellLocationStats, EnviornmentParams,
                                 SimParams, newRand)
@@ -37,7 +39,7 @@ def moveTrackRunReceptor(SimParams, ConcParams, CellMetaStats, CellStats, Celllo
         for j in range(10):
             for i in range(SimParams[0]):
                 Celllocations.append(i)
-    print(Celllocations)
+    l.log(Celllocations)
     exit(-1)
     CellLocationStats = [Celllocations]
 
@@ -124,8 +126,8 @@ def indRun(config):
     config.cellMetaStats.fullDivide = False
     Sim = simulation.simulation(config)
     out = Sim.indtest(config, run)
-    print(out[1])
-    print(out[2])
+    l.log(out[1])
+    l.log(out[2])
 
 def runIndividual(run, date, config, stress = None, strat = None, envornment = None, Aratio = None, AratioInt = None):
     if stress:
@@ -152,31 +154,31 @@ def testRun(config, runName, date, specificName = None):
     run_Param_list = []
 
     if config.runStats.cellStrategiesArrayFlag:
-        print("Running Strategies: " + str(config.runStats.cellStrategiesArray))
+        l.log("Running Strategies: " + str(config.runStats.cellStrategiesArray))
         run_Param_list.append(config.runStats.cellStrategiesArray)
     else:
         run_Param_list.append([None])
 
     if config.runStats.enviornmentArrayFlag:
-        print("Running Enviornments: " + str(config.runStats.enviornmentArray))
+        l.log("Running Enviornments: " + str(config.runStats.enviornmentArray))
         run_Param_list.append(config.runStats.enviornmentArray)
     else:
         run_Param_list.append([None])
 
     if config.runStats.runStress:
-        print("Running Stress Array: " + str(config.runStats.stressArray))
+        l.log("Running Stress Array: " + str(config.runStats.stressArray))
         run_Param_list.append(config.runStats.stressArray)
     else:
         run_Param_list.append([None])
 
     if config.runStats.cellRatioAEmphasisFlag:
-        print("Running A Ratio Array: " + str(config.runStats.cellRatioAEmphasis))
+        l.log("Running A Ratio Array: " + str(config.runStats.cellRatioAEmphasis))
         run_Param_list.append(config.runStats.cellRatioAEmphasis)
     else:
         run_Param_list.append([None])
 
     if config.runStats.cellRatioAIntEmphasisFlag:
-        print("Running A Ratio Int Array: " + str(config.runStats.cellRatioAIntEmphasis))
+        l.log("Running A Ratio Int Array: " + str(config.runStats.cellRatioAIntEmphasis))
         run_Param_list.append(config.runStats.cellRatioAIntEmphasis)
     else:
         run_Param_list.append([None])
@@ -188,7 +190,7 @@ def testRun(config, runName, date, specificName = None):
     count = 0
     for combo in combinations:
         count += 1
-        print(combo)
+        l.log(combo)
         stress = None
         strat = None
         envior = None
@@ -225,7 +227,7 @@ def testRun(config, runName, date, specificName = None):
                 run_str += '_'
             print_str += "AratioInt: " + str(AratioInt) + " "
             run_str += "AratioInt" + str(AratioInt)
-        print(print_str)
+        l.log(print_str)
         run = runName + "/" + run_str + "_" + utils.getTime()
         if specificName:
             run += "_" + specificName
@@ -278,7 +280,7 @@ def SNRrun(SimParams, ConcParams, CellMetaStats, CellStats, Celllocations, Envio
             Celllocations.append(i)
     CellLocationStats = [Celllocations]
 
-    print(Celllocations)
+    l.log(Celllocations)
 
     Sim = simulation.simulation(ConcParams, CellMetaStats, CellStats, CellLocationStats, EnviornmentParams,
                                 SimParams, newRand)
@@ -294,16 +296,16 @@ def MI_sensitivity_curve(SimParams, ConcParams, CellMetaStats, CellStats, Celllo
             Celllocations.append(i)
     CellLocationStats = [Celllocations]
 
-    print(Celllocations)
+    l.log(Celllocations)
 
     MIs = []
-    print(CellStats[2])
+    l.log(CellStats[2])
     for i in range(5, CellStats[2],10):
-        print("A receptors: " + str(i))
+        l.log("A receptors: " + str(i))
         CellStats[0] = i
         CellStats[1] = CellStats[2] - CellStats[0]
-        print(CellStats[0])
-        print(CellStats[1])
+        l.log(CellStats[0])
+        l.log(CellStats[1])
         Sim = simulation.simulation(ConcParams, CellMetaStats, CellStats, CellLocationStats, EnviornmentParams,
                                 SimParams, newRand)
         div, MI = Sim.staicConcRunTime(flag)

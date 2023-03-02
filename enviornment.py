@@ -4,6 +4,9 @@ import math
 import copy
 import random
 import matplotlib.pyplot as plt
+import utils
+import log
+l = log.log()
 
 class enviornment(object):
     #enviornment parameters: length, cells, cell positions, concentrations

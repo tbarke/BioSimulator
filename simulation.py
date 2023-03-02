@@ -7,6 +7,8 @@ import math
 from scipy import special
 import output
 import matplotlib.pyplot as plt
+import log
+l = log.log()
 
 class simulation(object):
     #concnetrations parameter array
@@ -59,12 +61,12 @@ class simulation(object):
         f = open("allSNRtable.txt", "r")
         lines = f.readlines()
         f.close()
-        print(receptors)
+        l.log(receptors)
         #print(concentrations)
         for i in range(len(receptors)):
             if i == 1:
-                print(self.SimEnviornment.cellsAlive())
-                print("-------------------------------------------------------------------------------")
+                l.log(self.SimEnviornment.cellsAlive())
+                l.log("-------------------------------------------------------------------------------")
             if receptors[i] == 0:
                 SNRs.append(0.0)
                 continue
@@ -76,7 +78,7 @@ class simulation(object):
                             SNRs.append(float(arrline[k+1]))
                             break
                     break
-        print(SNRs)
+        l.log(SNRs)
         sum = 0.0
         for i in SNRs:
             sum += i
@@ -158,7 +160,7 @@ class simulation(object):
         for i in range(self.SimLength):
             self.SimEnviornment.runCells()
             if i % 10 == 0:
-                print(i)
+                l.log(i)
                 utils.plotAllCells(self.SimEnviornment, i)
         return self.SimEnviornment.Areceptors, self.SimEnviornment.Breceptors, self.SimEnviornment.allLocations
 
@@ -180,7 +182,7 @@ class simulation(object):
             #if i % 1 == 0:
                 #print(i)
                 #utils.plotAllCells(self.SimEnviornment, i)
-        print(self.SimEnviornment.divisions)
+        l.log(self.SimEnviornment.divisions)
         return Amol, Bmol, Acons, Bcons
 
     #records the movement of a cell in a run
@@ -194,7 +196,7 @@ class simulation(object):
         for i in range(self.SimLength):
             self.SimEnviornment.divides_per_time = 0
             self.SimEnviornment.runCells()
-            print(self.SimEnviornment.time )
+            l.log(self.SimEnviornment.time )
             locations = self.SimEnviornment.giveALlCellLocations()
             vels = self.SimEnviornment.giveAllCellVelocities()
             cellsAlive = self.SimEnviornment.cellsAlive()
@@ -209,7 +211,7 @@ class simulation(object):
 
             for j in range(len(locations)):
                 locs.append(locations[j])
-        print(vel)
+        l.log(vel)
         return locs, self.SimEnviornment.divides, self.SimEnviornment.splitLoc, self.SimEnviornment.Amol, self.SimEnviornment.Bmol, self.SimEnviornment.Aconcs, self.SimEnviornment.Bconcs, totalCells, divides_per_time, self.SimEnviornment.mol_times, realCells, self.SimEnviornment.Aconcentrations, self.SimEnviornment.Bconcentrations
 
     #simulates the enviornment in static concnetration and returns the division rate and MI of the environment
@@ -258,7 +260,7 @@ class simulation(object):
             #print(i)
             #print(self.SimEnviornment.cellsAlive())
             if i == 1:
-                print(self.SimEnviornment.cellsAlive())
+                l.log(self.SimEnviornment.cellsAlive())
                 #print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
             rollingEntropy = 0.0
             arr = self.SimEnviornment.Bconcentrations
@@ -362,7 +364,7 @@ class simulation(object):
                 entr_in_ret = testMI.entropy_allX(dataX)
                 #ret = 0;
                 #
-                print(ret)
+                l.log(ret)
                 ret2.append(rollingEntropy)
                 MIs.append(ret[0])
                 Hx.append(ret[1])
@@ -373,15 +375,15 @@ class simulation(object):
                 self.SimEnviornment.resetDivisions()
         #print(MIs)
         #exit(-1)
-        print(totalCells)
+        l.log(totalCells)
         move = self.SimEnviornment.giveMovement()
         sum1 = 0;
         for i in range(len(move)):
             sum1 = sum1 + math.fabs(move[i])
         sum1 = sum1/len(move)
-        print(str(sum1) + "------------------------------------------------asdfasdgasfdgasdfvsadvsdavsdagvsfda------------------------------------------")
-        print(MIs)
-        print("MIs- -----------------------------------------------------------------------------------------------------------")
+        l.log(str(sum1) + "------------------------------------------------asdfasdgasfdgasdfvsadvsdavsdagvsfda------------------------------------------")
+        l.log(MIs)
+        l.log("MIs- -----------------------------------------------------------------------------------------------------------")
         return [totalCells, MIs, entr, entr_in, Hx, Hxgiveny]
 
     def staicConcRunTimeVar(self, printRun):
@@ -439,7 +441,7 @@ class simulation(object):
             self.SimEnviornment.runCells()
             #print("made it here")
             if i % 10 == 0:
-                print(str(i) + " time")
+                l.log(str(i) + " time")
                 if printRun:
                     utils.plotAllCells(self.SimEnviornment, i)
                     utils.plotAllConcentrat(self.SimEnviornment, i)
@@ -531,7 +533,7 @@ class simulation(object):
                 testMI = MICalc.MICalc()
                 #print(dataX)
                 #print(dataY)
-                print(len(self.SimEnviornment.giveAllCells()))
+                l.log(len(self.SimEnviornment.giveAllCells()))
                 ret = testMI.AltMI(dataX,dataY)
                 ent_ret = testMI.entropy_allX(dataY)
                 entr_in_ret = testMI.entropy_allX(dataX)
@@ -596,7 +598,7 @@ class simulation(object):
             self.SimEnviornment.runCells()
 
             if i % 10 == 0:
-                print(str(i) + " time")
+                l.log(str(i) + " time")
                 if printRun:
                     utils.plotAllCells(self.SimEnviornment, i)
                     utils.plotReceptors(self.SimEnviornment, i)
@@ -612,7 +614,7 @@ class simulation(object):
                 dataX.append(concs[1])
                 dataX.append(concs[2])
                 dataX.append(concs[3])
-                print(dataX)
+                l.log(dataX)
 
                 dataY = []
                 dataY.append(concs[4])
@@ -631,8 +633,8 @@ class simulation(object):
         self.runBeginningConc(time)
         frequency = self.concentrationFreq
         for i in range(self.SimLength):
-            print("Time: " + str(i) + "-------------------------------------------------------------------------------")
-            print(self.SimEnviornment.toString())
+            l.log("Time: " + str(i) + "-------------------------------------------------------------------------------")
+            l.log(self.SimEnviornment.toString())
             self.SimEnviornment.runConcentrationAdjusted()
             self.SimEnviornment.runCells()
             if i % 10 == 0:
@@ -665,7 +667,7 @@ class simulation(object):
 
         for i in range(math.ceil(self.SimLength*(1/self.SimEnviornment.timeStep))):
             if i%((1/self.SimEnviornment.timeStep)*10) == 0:
-                print("time: " + str(i*self.SimEnviornment.timeStep))
+                l.log("time: " + str(i*self.SimEnviornment.timeStep))
             self.SimEnviornment.runCells()
 
             if config.concParams.concProfile == "manaFromHeaven":
@@ -772,7 +774,7 @@ class simulation(object):
             enviornmentConcsFile = utils.saveDataDate(run, date, "enviornmentConcs", enviornmentConcs, config.runOutputFlags.compressSave, config.runStats.saveDir)
 
         if self.SimEnviornment.cellsAlive() < 100:
-            print("Warning: less than 100 cells alive at the end")
+            l.log("Warning: less than 100 cells alive at the end")
         config.writeConfig(config.runStats.saveDir + "/" + date + "/" + run + "/config.cfg")
         out = output.output(runName = run,enviornmentConcsFile = enviornmentConcsFile, totalcellsFile = totalCellsFile, totalReceptorsFile = totalReceptorsFile, boundReceptorsFile = boundReceptorsFile, internalABFile = internalABFile, totalConcsFile = totalConcsFile, cellLocationsFile = cellLocationsFile, cellMovementFile = cellMovementFile)
         outPath = out.write(config.runStats.saveDir + "/" + date)
@@ -803,10 +805,10 @@ class simulation(object):
         allDivisons = []
         allDeaths = []
         while self.SimEnviornment.cellsAlive() > 0:
-            print("cells alive: " + str(self.SimEnviornment.cellsAlive()))
+            l.log("cells alive: " + str(self.SimEnviornment.cellsAlive()))
             i += 1
             if i%((1/self.SimEnviornment.timeStep)*1) == 0:
-                print("time: " + str(i*self.SimEnviornment.timeStep))
+                l.log("time: " + str(i*self.SimEnviornment.timeStep))
                 x = range(self.SimEnviornment.length)
                 plt.bar(x, self.SimEnviornment.Aconcentrations, width=1)
                 plt.bar(x, self.SimEnviornment.Bconcentrations, width=1)
@@ -899,7 +901,7 @@ class simulation(object):
             cellLocationsFile = utils.saveDataDate(run, "cellLocations_" + run, cellLocations, config.runOutputFlags.compressSave, config.runStats.saveDir)
         if config.outputFlags.cellMovement:
             cellMovementFile = utils.saveDataDate(run, "cellMovement_" + run, cellMovement, config.runOutputFlags.compressSave, config.runStats.saveDir)
-        print("Cells Alive At End: " + str(self.SimEnviornment.cellsAlive()))
+        l.log("Cells Alive At End: " + str(self.SimEnviornment.cellsAlive()))
         out = output.output(totalcellsFile = totalCellsFile, totalReceptorsFile = totalReceptorsFile, boundReceptorsFile = boundReceptorsFile, internalABFile = internalABFile, totalConcsFile = totalConcsFile, cellLocationsFile = cellLocationsFile, cellMovementFile = cellMovementFile)
         return out, allDivisons, allDeaths
 

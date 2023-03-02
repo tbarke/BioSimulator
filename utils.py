@@ -14,6 +14,8 @@ from matplotlib.animation import PillowWriter
 import io
 from PIL import Image
 import imageio
+import log
+l = log.log()
 
 def calculateBoundKinetic(receptors, concentration, dissocociationConstant, newRand, noise, mode):
     boundRec = 0
@@ -60,7 +62,7 @@ def calculateBoundKinetic(receptors, concentration, dissocociationConstant, newR
             return 0
         return np.random.randint(0, receptors, 1)[0]
 
-    print("Incorrect binding type")
+    l.log("Incorrect binding type")
 
     return boundRec
 
@@ -100,7 +102,7 @@ def printPOSHASH(posHash):
         for i in range(len(cells)):
             ret += ("c" + str(i) + ":")
         ret += ", "
-    print(ret)
+    l.log(ret)
 
 def findCellID(ID, list):
     for i in list:
@@ -117,7 +119,7 @@ def fileToArr(fileName):
             num = float(currentString)
             arr.append(num)
         except:
-            print("could not parse string")
+            l.log("could not parse string")
     return arr
 
 def plotAllCells(testEnviornment, run):
@@ -126,7 +128,7 @@ def plotAllCells(testEnviornment, run):
     for i in range(len(allCells)):
         xAxis.append(i + 1)
     plt.bar(xAxis, allCells, color = ["blue"])
-    print("Cells/runCells"+str(run)+".png")
+    l.log("Cells/runCells"+str(run)+".png")
     plt.savefig("Cells/runCells"+str(run)+".png")
     plt.clf()
 
@@ -696,7 +698,7 @@ def loadDataDate(file_name, compressed, remove = False, removeCompress = False):
     return new_data, path
 
 def createGifBar(config, arr, celllocs, name):
-    print("creating gif for: " + name)
+    l.log("creating gif for: " + name)
     x = range(len(arr[0][0]))
     ims = []
     index = math.ceil(len(arr)/200)
@@ -731,7 +733,7 @@ def loadMetaData(filename = None):
             pass
         arr = line.split('=')
         if len(arr) != 2:
-            print("error: meta format is not correct on line: " + line)
+            l.log("error: meta format is not correct on line: " + line)
             raise metaFileException()
 
         metaDict[arr[0]] = arr[1]
@@ -746,5 +748,3 @@ def loadMetaData(filename = None):
             Map(stripped_line)
 
     return metaDict
-
-

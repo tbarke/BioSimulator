@@ -1,6 +1,8 @@
 import configparser
 import math
 import re
+import log
+l = log.log()
 
 class configuration(object):
 
@@ -165,7 +167,7 @@ class configuration(object):
                     paramnames[key2] = self.parse_string(config.get(mapNames[key1], key2))
                 except configparser.NoOptionError:
                     if not supressWarnings:
-                        print("Warning: could not load in: " + mapNames[key1] + "." + key2 + ", Probably loading in from an old version config. Using default Value.")
+                        l.log("Warning: could not load in: " + mapNames[key1] + "." + key2 + ", Probably loading in from an old version config. Using default Value.")
 
     def writeConfig(self, filename):
         config = configparser.ConfigParser()
