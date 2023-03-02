@@ -40,4 +40,3 @@ class log:
             string_buffer = io.StringIO()
             print(traceback.format_exc(), file=string_buffer)
             self.log(string_buffer.getvalue())
-

@@ -124,7 +124,7 @@ def main():
     c.simParams.simTimeStep = .05
     c.cellMetaStats.stress = 0.05
     c.cellMetaStats.absorptionRate = 1/c.cellMetaStats.stress
-    c.cellMetaStats.survivalCost = 100
+    c.cellMetaStats.survivalCost = 200 #was 100
     c.concParams.VonMisesMagnitude = 200
     c.runOutputFlags.compressSave = False
     # set Cell strategy
@@ -134,7 +134,7 @@ def main():
     c.runStats.runStress = False
     c.runStats.cellStrategiesArrayFlag = True
     c.runStats.enviornmentArrayFlag = False
-    c.runStats.cellRatioAEmphasisFlag = False
+    c.runStats.cellRatioAEmphasisFlag = True
     c.runStats.cellRatioAIntEmphasisFlag = False
     # TODO: implement below
     c.runStats.runDetermine = False
@@ -165,49 +165,36 @@ def main():
     c.runStats.saveDir = meta["path"]
 
     # give run name
-    runName = 'output_save_test'
+    runName = 'FileName_test'
     date = str(utils.getTodaysDate())
 
-    #output_objects, output_files = run.testRun(c, runName, date)
-    #utils.saveData(c.runStats.saveDir +"/" + date + "/" + runName + "/OutputProfiles" , output_files, "outputProfilePaths.txt")
-
-    date = "2023-02-28"
-    runName = "ratioA_IntA"
-    output_files = utils.loadData(c.runStats.saveDir +"/"+ date+ "/" + runName  + "/OutputProfiles/outputProfilePaths.txt")
+    output_objects, output_files = run.testRun(c, runName, date)
+    utils.saveData(c.runStats.saveDir +"/" + date + "/" + runName + "/OutputProfiles" , output_files, "outputProfilePaths.txt")
 
 
-    #TODO needs to be rebuilt
-    def refactorfile(file):
-        arr = file.split('/')
-        count = 0
-        for a in arr:
-            count += 1
-            if a == 'Data':
-                break
-        newFile = ''
-        for i in range(count, len(arr), 1):
-            newFile += arr[i]
-            if i != len(arr)-1:
-                newFile += '/'
-        return newFile
+    #date = "2023-02-28"
+    #runName = "ratioA_IntA"
+    #output_files = utils.loadData(c.runStats.saveDir +"/"+ date+ "/" + runName  + "/OutputProfiles/outputProfilePaths.txt")
+
 
     output_objects = []
     for i in range(len(output_files)):
-        file = c.runStats.saveDir + '/' + refactorfile(output_files[i])
+        file = c.runStats.saveDir + '/' + output_files[i]
         l.log(file)
         output_files[i] = file
         o = output.output()
         o.read(file)
         output_objects.append(o)
 
-    """""
     bins = 30
     for i, out in enumerate(output_objects):
         out.calculateMeasures(c, bins)
-        print("finished: " + out.runName)
-        print(out.write(output_files[i], absolute=True))
-        #exit()
-        
+        l.log("finished: " + out.runName)
+        l.log(out.write(output_files[i], absolute=True))
+
+    return
+
+    #new stuff
     """""
     def d3color(emp_red, emp_blue):
         color_Scheme1 = ['Black', 'Red']
@@ -248,7 +235,7 @@ def main():
     plt.grid()
     plt.legend()
     plt.show()
-
+    """""
 
     return
     bins = 30
