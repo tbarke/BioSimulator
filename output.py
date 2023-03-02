@@ -1,12 +1,11 @@
 import configparser
 import math
-
+import typing
 import outputAnalysis
-import utils
-
+import log
+l = log.log()
 
 class output(object):
-
     class PrimitiveOutput:
         def __init__(self, totalcellsFile = None, totalReceptorsFile = None, boundReceptorsFile = None, internalABFile = None, totalConcsFile = None, cellLocationsFile = None, cellMovementFile = None, enviornmentConcsFile = None):
             self.totalcellsFile = totalcellsFile
@@ -37,26 +36,44 @@ class output(object):
             self.growth = growth
 
     def __init__(self, runName = None, totalcellsFile = None, totalReceptorsFile = None, boundReceptorsFile = None, internalABFile = None, totalConcsFile = None, cellLocationsFile = None, cellMovementFile = None, enviornmentConcsFile = None, totalMIFile = None, averageMIFile = None, compositeMIFile = None, weightedMIFile = None, averageGrowthFile = None, SIAsVarFile = None, SIAsEntropyFile = None):
-        self.runName = runName
+        if runName:
+            self.runName = runName
+        else:
+            self.runName = ''
         self.fileName = ''
         self.PrimitiveOutput = self.PrimitiveOutput(totalcellsFile,totalReceptorsFile, boundReceptorsFile, internalABFile, totalConcsFile, cellLocationsFile, cellMovementFile, enviornmentConcsFile)
         self.CalcOutput = self.CalcOutput(totalMIFile, averageMIFile, compositeMIFile, weightedMIFile, averageGrowthFile, SIAsVarFile, SIAsEntropyFile)
         self.RunClacOut = self.RunClacOut()
 
+    def refactorfile(self, file1):
+        arr = file1.split('/')
+        count = 0
+        for a in arr:
+            count += 1
+            if a == 'Data':
+                break
+        newFile = ''
+        for i in range(count, len(arr), 1):
+            newFile += arr[i]
+            if i != len(arr) - 1:
+                newFile += '/'
+        return '/Users/tyler/Library/CloudStorage/OneDrive-UniversityofNebraska-Lincoln/Biosim/Data/' + newFile
+
     def calculateMeasures(self, config, bins):
         try:
-            MITrad, MI2D2D, MImove, growth = outputAnalysis.CalcData(config, bins, True, True, True, True, self.PrimitiveOutput.totalConcsFile, self.PrimitiveOutput.cellMovementFile, self.PrimitiveOutput.boundReceptorsFile, self.PrimitiveOutput.totalcellsFile)
+            MITrad, MI2D2D, MImove, growth = outputAnalysis.CalcData(config, bins, True, True, True, True, self.refactorfile(self.PrimitiveOutput.totalConcsFile), self.refactorfile(self.PrimitiveOutput.cellMovementFile), self.refactorfile(self.PrimitiveOutput.boundReceptorsFile), self.refactorfile(self.PrimitiveOutput.totalcellsFile))
             #TODO fix below and in write (object should be lower case to use the constructor, but this will break below)
             self.RunClacOut.MItrad = MITrad
-            self.RunClacOut.MI2D2D = MI2D2D
-            self.RunClacOut.MI2D1D = MImove
+            self.RunClacOut.MI2D2D = MI2D2D[0]
+            self.RunClacOut.MI2D1D = MImove[0]
             #TODO implement below
             #self.RunClacOut.MI2D1Din = MI2D1Din
             self.RunClacOut.growth = growth
         except Exception as e:
-            print("Error: ", e)
+            l.log("Error: ", e)
 
     def read(self, filename, supressWarnings = True):
+
         def parse_string(input_str):
             import re
             input_str = input_str.strip()
@@ -89,16 +106,19 @@ class output(object):
         paramOrg = self.__dict__
         primitive = (int, str, bool, float)
         for key1, value1 in paramOrg.items():
-            if isinstance(value1, primitive):
-                paramOrg[key1] = config.get('nosection', key1)
+            try:
+                if isinstance(value1, primitive):
+                    paramOrg[key1] = config.get('PrimitiveOutput', key1)
+                    continue
+            except:
                 continue
             paramnames = value1.__dict__
             for key2 in paramnames:
                 try:
                     paramnames[key2] = parse_string(config.get(key1, key2))
-                except configparser.NoOptionError:
+                except (configparser.NoOptionError, configparser.NoSectionError):
                     if not supressWarnings:
-                        print("Warning: could not load in: " + key1 + "." + key2 + ", Probably loading in from an old version config. Using default Value.")
+                        l.log("Warning: could not load in: " + key1 + "." + key2 + ", Probably loading in from an old version config. Using default Value.")
 
     def write(self, path, absolute = False):
         config = configparser.ConfigParser()
@@ -126,6 +146,7 @@ class output(object):
 
         config['PrimitiveOutput'] = priDict
         config['CalcOutput'] = calcDict
+        config['RunClacOut'] = runClacDict
 
         fullpath = path
         if not absolute:

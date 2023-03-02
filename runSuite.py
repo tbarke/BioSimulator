@@ -1,6 +1,9 @@
 import run
 import math
 import utils
+import utils
+import log
+l = log.log()
 
 #parameters[0] is SimParams
 #parameters[1] is ConcParams
@@ -48,7 +51,7 @@ def simulate_noisy(cell_stress, number, cell_type, location, noise, parameters, 
     new_survival = []
     #print(len(survivaly))
     for j in range(0,len(survivaly)):
-        print(survivaly[j])
+        l.log(survivaly[j])
         new_survival.append([])
         for i in range(0,len(survivaly[j])-1):
             new_survival[j].append(math.log(survivaly[j][i+1]/survivaly[j][i],2))
@@ -61,9 +64,9 @@ def simulate_noisy(cell_stress, number, cell_type, location, noise, parameters, 
     entr_sum = 0.0
     entr_input = 0.0
     count = 0.0
-    print(len(MIy))
+    l.log(len(MIy))
     for j in range(len(MIy)):
-        print(len(MIy[j]))
+        l.log(len(MIy[j]))
         for i in range(len(MIy[j])):
             count = count + 1
             growth_sum = growth_sum + new_survival[j][i]
@@ -102,7 +105,7 @@ def simulate(cell_stress, number, cell_type, location, parameters):
     else:
         parameters[2][5] = "non"
     for i in range(parameters[6]):
-        print(str(i) + ": Repeat Number")
+        l.log(str(i) + ": Repeat Number")
         timeRun = run.divisonMIRun(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], False)
         survivaly.append(timeRun[0])
         MIy.append(timeRun[1])
@@ -110,12 +113,12 @@ def simulate(cell_stress, number, cell_type, location, parameters):
         entr_in.append(timeRun[3])
 
     new_survival = []
-    print(len(survivaly))
+    l.log(len(survivaly))
     for j in range(0,len(survivaly)):
         new_survival.append([])
         for i in range(0,len(survivaly[j])-1):
             new_survival[j].append(math.log(survivaly[j][i+1]/survivaly[j][i],2))
-        print(len(new_survival[j]))
+        l.log(len(new_survival[j]))
         new_survival[j].append(new_survival[j][len(new_survival[j]) - 1])
 
     growth_sum = 0.0
@@ -195,8 +198,8 @@ def suite_noise_stress(noise_array, cell_stress_array, parameters, run_name):
         MI_vars_max = []
 
         for i in range(len(cell_stress_array)):
-            print("noise ARray: " + str(noise) + "cell stress array: " + str(cell_stress_array[i]))
-            print("Measured Cell, Stress: " + str(cell_stress_array[i]) + " Percent Done: " + str(i/len(cell_stress_array)) + " ........................................................")
+            l.log("noise ARray: " + str(noise) + "cell stress array: " + str(cell_stress_array[i]))
+            l.log("Measured Cell, Stress: " + str(cell_stress_array[i]) + " Percent Done: " + str(i/len(cell_stress_array)) + " ........................................................")
             array = simulate_noisy(cell_stress_array[i], i, "Measured", "10-27-21", noise, parameters, "gaussian")
             measured_growth.append(array[0])
             measured_MI.append(array[1])
@@ -212,7 +215,7 @@ def suite_noise_stress(noise_array, cell_stress_array, parameters, run_name):
             MI_vars_measured.append(array[8])
 
             enviornment_stats.append(array[9])
-            print("Maximum Sensitivity: " + str(cell_stress_array[i]) + " Percent Done: " + str(i/len(cell_stress_array))+ " ........................................................")
+            l.log("Maximum Sensitivity: " + str(cell_stress_array[i]) + " Percent Done: " + str(i/len(cell_stress_array))+ " ........................................................")
             array = simulate_noisy(cell_stress_array[i], i, "Maximum Sensitivity", "10-27-21", noise, parameters, "gaussian")
             max_growth.append(array[0])
             max_MI.append(array[1])
@@ -306,5 +309,5 @@ def suite_noise_stress(noise_array, cell_stress_array, parameters, run_name):
 
     data_array.insert(0, title_array)
 
-    print("Run Finished Exporting Data...")
+    l.log("Run Finished Exporting Data...")
     return utils.saveDataDate(run_name, data_array, True)

@@ -1,6 +1,8 @@
 import math
 #from numba import jit
 #import numpy as np
+import log
+l = log.log()
 
 class MICalc(object):
 

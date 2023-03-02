@@ -5,6 +5,9 @@ import MICalc
 import glob
 import matplotlib.pyplot as plt
 import numpy as np
+import utils
+import log
+l = log.log()
 
 
 def reduceSize(arr, k):
@@ -130,9 +133,9 @@ def getCalcArray(config, run, date, stresses, strats, enviorns, bins):
             growthAll[i].append([])
             MI2D1DinAll[i].append([])
             for k in range(len(stresses)):
-                print(strats[i])
-                print(enviorns[j])
-                print(stresses[k])
+                l.log(strats[i])
+                l.log(enviorns[j])
+                l.log(stresses[k])
                 externalAB_raw = glob.glob(
                     'Data/' + date + '/' + run + '/' + str(stresses[k]) + '_' + strats[i] + '_' + enviorns[
                         j] + '/totalConcs*.gz')[0]
@@ -259,8 +262,8 @@ def createFigureMIGrowth(growths, MI_moves, MI_trad, Strategies, stresses):
 
         model4 = np.poly1d(np.polyfit(x, y, 4))
         polyline = np.linspace(0, 10, 100)
-        print(x)
-        print(y)
+        l.log(x)
+        l.log(y)
         #tck, u = interpolate.splprep([x, y], s = 0)
         #plt.plot(polyline, model4(polyline), label = str(stresses[i]))
         #xnew, ynew = interpolate.splev(np.linspace(0, 1, 100), tck, der=0)
