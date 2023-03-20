@@ -20,6 +20,8 @@ import log
 l = log.log()
 
 def main():
+
+
     """""
     #----------------------------
     finalDat = utils.loadDataDate("Data/finalDataSave_08_04_00.834293.gz", True)[0]
@@ -124,7 +126,7 @@ def main():
     c.simParams.simTimeStep = .05
     c.cellMetaStats.stress = 0.05
     c.cellMetaStats.absorptionRate = 1/c.cellMetaStats.stress
-    c.cellMetaStats.survivalCost = 200 #was 100
+    c.cellMetaStats.survivalCost = 100
     c.concParams.VonMisesMagnitude = 200
     c.runOutputFlags.compressSave = False
     # set Cell strategy
@@ -135,7 +137,7 @@ def main():
     c.runStats.cellStrategiesArrayFlag = True
     c.runStats.enviornmentArrayFlag = False
     c.runStats.cellRatioAEmphasisFlag = True
-    c.runStats.cellRatioAIntEmphasisFlag = False
+    c.runStats.cellRatioAIntEmphasisFlag = True
     # TODO: implement below
     c.runStats.runDetermine = False
 
@@ -156,6 +158,8 @@ def main():
 
     #set simulation meta parameters
     c.runStats.stressArray = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    c.runStats.cellRatioAEmphasis = [-50, -40 , -30, -20, -10, -5, -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 10, 20 ,30 ,40 ,50]
+    c.runStats.cellRatioAIntEmphasis = [-50, -40 , -30, -20, -10, -5, -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 10, 20 ,30 ,40 ,50]
     c.runStats.enviornmentArray = ["vonMises"]
     c.runStats.cellStrategiesArray = ["ratio"]
 
@@ -165,26 +169,52 @@ def main():
     c.runStats.saveDir = meta["path"]
 
     # give run name
-    runName = 'FileName_test'
+    runName = 'newRunStressStrats'
     date = str(utils.getTodaysDate())
-
+    """""
     output_objects, output_files = run.testRun(c, runName, date)
     utils.saveData(c.runStats.saveDir +"/" + date + "/" + runName + "/OutputProfiles" , output_files, "outputProfilePaths.txt")
+    return
+    """""
 
-
-    #date = "2023-02-28"
+    date = "2023-03-12"
     #runName = "ratioA_IntA"
-    #output_files = utils.loadData(c.runStats.saveDir +"/"+ date+ "/" + runName  + "/OutputProfiles/outputProfilePaths.txt")
+    output_files = utils.loadData(c.runStats.saveDir +"/"+ date+ "/" + runName  + "/OutputProfiles/outputProfilePaths.txt")
 
 
     output_objects = []
     for i in range(len(output_files)):
         file = c.runStats.saveDir + '/' + output_files[i]
-        l.log(file)
+        #l.log(file)
         output_files[i] = file
         o = output.output()
         o.read(file)
         output_objects.append(o)
+    """""
+    zero_counts = []
+    zero_count = -1
+    zerozero = None
+    for i in range(len(c.runStats.cellRatioAEmphasis)):
+        for j in range(len(c.runStats.cellRatioAIntEmphasis)):
+            zero_count += 1
+            if c.runStats.cellRatioAEmphasis[i] == 0:
+                zero_counts.append(zero_count)
+            if c.runStats.cellRatioAIntEmphasis[j] == 0:
+                zerozero = zero_count
+            if c.runStats.cellRatioAEmphasis[i] == 
+
+    out = output_objects[zero_counts[1]]
+    totalcellsFile = 'Data/' + out.PrimitiveOutput.totalcellsFile
+    #totalcellsFile = 'Data/' + out.PrimitiveOutput.enviornmentConcsFile
+    totalcellsFile = 'Data/' + out.PrimitiveOutput.cellLocationsFile
+    tot = utils.loadData(totalcellsFile)
+    #print(tot[0])
+    plt.hist(tot[100], bins = 100)
+    #plt.plot(tot[0][0])
+    #plt.plot(tot[0][1])
+    plt.show()
+    l.exit()
+    """""
 
     bins = 30
     for i, out in enumerate(output_objects):
@@ -195,47 +225,153 @@ def main():
     return
 
     #new stuff
-    """""
+
     def d3color(emp_red, emp_blue):
         color_Scheme1 = ['Black', 'Red']
         color_Scheme2 = ['Black', 'Blue']
-        color_red = colors.findcolor(1,0,color_Scheme1, emp_red, absolute=False)
-        color_blue = colors.findcolor(1,0,color_Scheme2, emp_blue, absolute=False)
+        color_red = colors.findcolor(50, 0,color_Scheme1, emp_red, absolute=False)
+        color_blue = colors.findcolor(50,0,color_Scheme2, emp_blue, absolute=False)
         color_Scheme3 = [color_red, color_blue]
-        dist = color_blue[2] / (color_red[0] + color_blue[2])
+        dist = 0
+        if color_red[0] + color_blue[2] >0:
+            dist = color_blue[2] / (color_red[0] + color_blue[2])
         color_purp = colors.findcolor(1,0,color_Scheme3, dist)
         return color_purp
 
 
     #ratioA is red
     #ratioint is blue
-    colors_plot = []
+    colors_plot1 = []
+    colors_plot2 = []
     MImoves = []
     MIs = []
     MITrad = []
     growths = []
     count = -1
+    ratioA =[]
+    ratioAint = []
+    MImovesDiff = []
+    MIsDiff = []
+    zero_counts = []
+    MI_tradDiff = []
+    zero_count = -1
+
+    red_color = [1, 0, 0]
+    green_color = [0, 1, 0]
+    blue_color = [0, 0, 1]
+    yellow_color = [1, 1, 0]
+    colors_4D = [red_color, blue_color, green_color, yellow_color]
     for i in range(len(c.runStats.cellRatioAEmphasis)):
         for j in range(len(c.runStats.cellRatioAIntEmphasis)):
+            zero_count += 1
+            if c.runStats.cellRatioAEmphasis[i] ==0:
+                zero_counts.append(zero_count)
+    for i in range(len(c.runStats.cellRatioAEmphasis)):
+        for j in range(len(c.runStats.cellRatioAIntEmphasis)):
+            #print("here" + str(output_objects[count].RunClacOut.MI2D2D))
             count += 1
-            if output_objects[count].RunClacOut.MI2D2D != '':
-                colors_plot.append(d3color(c.runStats.cellRatioAEmphasis[i], c.runStats.cellRatioAIntEmphasis[j]))
-                MImoves.append(output_objects[count].RunClacOut.MI2D1D)
-                MIs.append(output_objects[count].RunClacOut.MI2D2D)
+            if output_objects[count].RunClacOut.MI2D2D != '':# and c.runStats.cellRatioAEmphasis[i] >= 0 and c.runStats.cellRatioAIntEmphasis[j] >= 0:
+                #if c.runStats.cellRatioAEmphasis[i] != 0:
+                #    colors_plot.append([1,0,0])
+                #else:
+                #    colors_plot.append([0,0,1])
+                colors_plot1.append(colors.findColor4D(colors_4D, (c.runStats.cellRatioAEmphasis[i]+50)/100, (c.runStats.cellRatioAIntEmphasis[j] +50)/100))
+                ratioA.append(c.runStats.cellRatioAEmphasis[i])
+                ratioAint.append(c.runStats.cellRatioAIntEmphasis[j])
+                color_Scheme1 = ['Black', 'Red']
+                color_Scheme2 = ['Black', 'Blue']
+                #colors_plot1.append(colors.findcolor(50, -50, color_Scheme1, c.runStats.cellRatioAEmphasis[i]))
+                #colors_plot2.append(colors.findcolor(50, -50, color_Scheme2, c.runStats.cellRatioAIntEmphasis[j]))
+                mimove1 = float(output_objects[count].RunClacOut.MI2D1D.split(',')[0][1:].strip())
+                mimove2 = float(output_objects[count].RunClacOut.MI2D1D.split(',')[3][1:].strip())
+                mimove_count = mimove1 + mimove2
+
+                mimovezero1 = float(output_objects[zero_counts[j]].RunClacOut.MI2D1D.split(',')[0][1:].strip())
+                mimovezero2 = float(output_objects[zero_counts[j]].RunClacOut.MI2D1D.split(',')[3][1:].strip())
+                mimove_zero = mimovezero1 + mimovezero2
+                #MImoves.append(output_objects[count].RunClacOut.MI2D1D)
+                MImoves.append(mimove_count)
+                #MImovesDiff.append(output_objects[count].RunClacOut.MI2D1D - output_objects[zero_counts[j]].RunClacOut.MI2D1D)
+                MImovesDiff.append(mimove_count - mimove_zero)
+
+                num_zero1 = float(output_objects[zero_counts[j]].RunClacOut.MI2D2D.split(',')[0][1:].strip())
+                num_zero2 = float(output_objects[zero_counts[j]].RunClacOut.MI2D2D.split(',')[3][1:].strip())
+                MI2d2d_zero = num_zero1+num_zero2
+                num1 = float(output_objects[count].RunClacOut.MI2D2D.split(',')[0][1:].strip())
+                num2 = float(output_objects[count].RunClacOut.MI2D2D.split(',')[3][1:].strip())
+                mi2d2d_count = num1+num2
+                #print(num)
+                MIs.append(mi2d2d_count)
+                MIsDiff.append(mi2d2d_count - MI2d2d_zero)
                 MITrad.append(output_objects[count].RunClacOut.MItrad)
+                MI_tradDiff.append((output_objects[zero_counts[j]].RunClacOut.MItrad) - (output_objects[count].RunClacOut.MItrad))
                 growths.append(output_objects[count].RunClacOut.growth)
 
-    plt.scatter(MIs, growths, color = colors_plot)
-    plt.scatter(2, 2, color = 'Blue', label = "Internal Ratio")
-    plt.scatter(2, 2, color = 'Red', label = "Receptor Ratio")
-    plt.xlabel("MI (2D2D)")
-    plt.xlim([0, 0.6])
+    """""
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Plot the data points as scatter plot
+    ax.scatter(ratioA, ratioAint, MImovesDiff)
+
+    # Create a surface from the data points
+    surf = ax.plot_trisurf(ratioA, ratioAint, MImovesDiff, cmap='viridis', edgecolor='none')
+
+    # Add a color bar to the plot
+    fig.colorbar(surf)
+
+    # Set labels for the axes
+    ax.set_xlabel('Receptor Allocation Sigmoid Coefficient')
+    ax.set_ylabel('Strategy Sigmoid Coefficient')
+    ax.set_zlabel('\'Useful\' Information (Adaptive) - \'Useful\' Information (Equal)')
+
+    # Show the plot
+    plt.show()
+    l.exit()
+    """""
+
+
+    rects = colors.drawRectangles(100, colors_4D)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    ax1.scatter(MImovesDiff, growths, color=colors_plot1, zorder=3)
+    # plt.scatter(2, 2, color = 'Blue', label = "Strategy Sigmoid Coefficient")
+    # plt.scatter(2, 2, color = 'Red', label = "Receptor Allocation Sigmoid Coefficient")
+    #ax1.set_xlabel("\'Useful\' Information")
+    ax1.set_xlabel("Syntactic Information")
+    # plt.xlim([0, 0.6])
+    ax1.set_ylabel("Growth")
+    # plt.ylim([-.1, .25])
+    ax1.grid( zorder=0)
+    #plt.legend()
+
+
+
+    for box in rects:
+        ax2.add_patch(box)
+
+    ax2.set_xlim(0, 1)
+    ax2.set_ylim(0, 1)
+    ax2.set_xticks([0, 1], [-50, 50])
+    ax2.set_yticks([0, 1], [-50, 50])
+    ax2.set_xlabel("Receptor Allocation Gain")
+    ax2.set_ylabel("Strategy Gain")
+    plt.show()
+
+
+
+    #plt.show()
+
+    l.exit()
+    plt.scatter(MImoves, growths, color=colors_plot2)
+    plt.scatter(2, 2, color='Blue', label="Internal Ratio")
+    plt.scatter(2, 2, color='Red', label="Receptor Ratio")
+    plt.xlabel("MI (2D1D)")
+    # plt.xlim([0, 0.6])
     plt.ylabel("growth")
-    plt.ylim([-.1, .25])
+    # plt.ylim([-.1, .25])
     plt.grid()
     plt.legend()
     plt.show()
-    """""
 
     return
     bins = 30

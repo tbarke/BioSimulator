@@ -41,7 +41,7 @@ def MI_trad(ext, bound, k, bins):
     MI = MI_obj.AltMI(dataX, dataY, bins)[0]
     return MI
 
-def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, extABFile = None, moveFile = None, boundFile = None, totalCellsFile = None):
+def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWeightFlag, intABFile = None, extABFile = None, moveFile = None, boundFile = None, totalCellsFile = None):
     extAB = None
     move = None
     boundAB = None
@@ -51,6 +51,9 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, extAB
         move = utils.loadDataDate(moveFile, False)
     if MITradFlag or MI2d2dFlag:
         boundAB = utils.loadDataDate(boundFile, False)
+
+    if intWeightFlag:
+        intAB = utils.loadDataDate(intABFile, False)
 
     ext_A = []
     ext_B = []
@@ -67,7 +70,19 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, extAB
 
     boundA = []
     boundB = []
+
     count = 0
+    #intA = []
+    intAextAL = []
+    intAextAR = []
+
+    #intB = []
+    intBextBL = []
+    intBextBR = []
+
+    intBMove = []
+    intAMove = []
+
     if MITradFlag or MI2d2dFlag or MIMoveFlag:
         for i in range(len(extAB[0])):
             for j in range(len(extAB[0][i])):
@@ -78,8 +93,13 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, extAB
                     ext_A.append(extAB[0][i][j][1] - extAB[0][i][j][0])
                     ext_B.append(extAB[0][i][j][3] - extAB[0][i][j][2])
                 if MI2d2dFlag:
-                    boundA.append(boundAB[0][i][j][1] - boundAB[0][i][j][0])
-                    boundB.append(boundAB[0][i][j][3] - boundAB[0][i][j][2])
+                    boundAB_all = math.fabs(boundAB[0][i][j][1] - boundAB[0][i][j][0]) + math.fabs(boundAB[0][i][j][3] - boundAB[0][i][j][2])
+                    if boundAB_all > 0:
+                        boundA.append((boundAB[0][i][j][1] - boundAB[0][i][j][0])/boundAB_all)
+                        boundB.append((boundAB[0][i][j][3] - boundAB[0][i][j][2])/boundAB_all)
+                    else:
+                        boundA.append(0)
+                        boundB.append(0)
 
                 if MITradFlag:
                     extAL.append(extAB[0][i][j][0])
@@ -93,26 +113,80 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, extAB
                     # ------------bound A------------
                     boundBL.append(boundAB[0][i][j][2])
                     boundBR.append(boundAB[0][i][j][3])
+                if intWeightFlag:
+                    intA_curr = intAB[0][i][j][0]
+                    intB_curr = intAB[0][i][j][1]
+                    if intA_curr > intB_curr:
+                        intBextBL.append(extAB[0][i][j][2])
+                        intBextBR.append(extAB[0][i][j][3])
+                        intBMove.append(move[0][i][j])
+                    else:
+                        intAextAL.append(extAB[0][i][j][0])
+                        intAextAR.append(extAB[0][i][j][1])
+                        intAMove.append(move[0][i][j])
+
 
     MI2D2D = None
     MITrad = None
     MImove = None
+    intweightMIMove = None
     growth = None
 
     k = 1
-    if count > 200000:
-        k = math.ceil(count / 100000)
+    if count > 20000:
+        k = math.ceil(count / 10000)
 
+    def reduce(arr, k):
+        new = []
+        for i in range(0, len(arr), k):
+            new.append(arr[i])
+        return new
+
+    extAR = reduce(extAR, k)
+    extAL = reduce(extAL, k)
+    extBR = reduce(extBR, k)
+    extBL = reduce(extBL, k)
+
+    boundAR = reduce(boundAR, k)
+    boundAL = reduce(boundAL, k)
+    boundBR = reduce(boundBR, k)
+    boundBL = reduce(boundBL, k)
+
+    move_arr = reduce(move_arr, k)
+
+
+    #------------------------
+    k = 10
+    intAextAL = reduce( intAextAL, k)
+    intAextAR = reduce(intAextAR , k)
+    intAMove = reduce(intAMove , k)
+
+    intBextBL = reduce(intBextBL, k)
+    intBextBR = reduce(intBextBR, k)
+    intBMove = reduce(intBMove, k)
     if MITradFlag:
-        MITrad = MI_trad([extAL, extAR, extBL, extBR], [boundAL, boundAR, boundBL, boundBR], k, bins)
+        #MITrad = MI_trad([extAL, extAR, extBL, extBR], [boundAL, boundAR, boundBL, boundBR], k, bins)
+        MITrad = 0
     if MI2d2dFlag:
-        MI2D2D = utils.MI2D2D(ext_A, ext_B, boundA, boundB, bins)
+        #MI2D2D1 = utils.MI2D2D(extAR, extAL, boundAR, boundAL, bins)
+        #MI2D2D2 = utils.MI2D2D(extBR, extBL, boundBR, boundBL, bins)
+        #MI2D2D = MI2D2D1 + MI2D2D2
+        MI2D2D = 0
     if MIMoveFlag:
-        MImove = utils.MI2D1D(ext_A, ext_B, move_arr, bins)
+        #MImove1 = utils.MI2D1D(extAR, extAL, move_arr, bins)
+        #MImove2 = utils.MI2D1D(extBR, extBL, move_arr, bins)
+        #MImove = MImove1 + MImove2
+        MImove = 0
     if growthFlag:
-        growth = calcGrowth(totalCellsFile, config)
+        #growth = calcGrowth(totalCellsFile, config)
+        growth = 0
+    if intWeightFlag:
+        intWeightAMI = utils.MI2D1D(intAextAL, intAextAR, intAMove, bins)
+        intWeightBMI = utils.MI2D1D(intBextBL, intBextBR, intBMove, bins)
+        intweightMIMove = intWeightAMI + intWeightBMI
 
-    return MITrad, MI2D2D, MImove, growth
+
+    return MITrad, MI2D2D, MImove, growth, intweightMIMove
 
 def getCalcArray(config, run, date, stresses, strats, enviorns, bins):
     MI_tradAll = []

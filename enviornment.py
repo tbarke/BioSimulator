@@ -245,7 +245,6 @@ class enviornment(object):
                     #print("died")
                     self.deaths += 1
                     continue
-
                 newPosition = (pos + round(arr[0])) % math.floor(self.length)
                 #if newPosition < 0:
                 #    newPosition = 0

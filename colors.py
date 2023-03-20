@@ -1,5 +1,6 @@
 import math
 import log
+from matplotlib.patches import Rectangle
 l = log.log()
 
 def getColorCode(color):
@@ -44,3 +45,57 @@ def findcolor(max, min, color_scheme, num, absolute = True):
         return [new_x, new_y, new_z]
     else:
         return [new_x*255, new_y*255, new_z*255]
+
+def findColor4D(colors, x1, y1):
+
+    def dist(x1, y1, x2, y2):
+        return math.sqrt(math.fabs(math.pow(y2-y1, 2)) +math.fabs(math.pow(x2-x1, 2)))
+
+    #x2 = x1
+    xplane1_dist = dist(x1, y1, x1, 0)
+    #y2 = y1
+    yplane1_dist = dist(x1, y1, 0, y1)
+    #x2 = x1
+    xplane2_dist = 1 - xplane1_dist
+    #y2 = y1
+    yplane2_dist = 1 - yplane1_dist
+
+    red_infl = (1 - xplane1_dist) * (1-yplane1_dist)
+    blue_infl = (1 - xplane2_dist) * (1-yplane1_dist)
+    green_infl =(1 - xplane1_dist) * (1-yplane2_dist)
+    yellow_infl = (1 - xplane2_dist) * (1-yplane2_dist)
+
+
+    def multColor(infl, color):
+        new_color = [0,0,0]
+        new_color[0] = color[0] * infl
+        new_color[1] = color[1] * infl
+        new_color[2] = color[2] * infl
+        return new_color
+
+    new_red  = multColor(red_infl, colors[0])
+    new_blue = multColor(blue_infl, colors[1])
+    green_blue = multColor(green_infl, colors[2])
+    yellow_blue = multColor(yellow_infl, colors[3])
+
+    def color_combine(colors):
+        length = len(colors)
+        new_color = [0,0,0]
+        for i in range(length):
+            new_color[0] += colors[i][0]
+            new_color[1] += colors[i][1]
+            new_color[2] += colors[i][2]
+
+        return new_color
+
+    return color_combine([new_red, new_blue, green_blue, yellow_blue])
+
+def drawRectangles(boxes, colors_4D):
+    index = 1/boxes
+    rects = []
+    for i in range(boxes):
+        i_index = i * index
+        for j in range(boxes):
+            j_index = j*index
+            rects.append(Rectangle((i_index, j_index), index, index, facecolor=findColor4D(colors_4D, i_index, j_index )))
+    return rects

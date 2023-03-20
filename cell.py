@@ -101,7 +101,14 @@ class cell(object):
         elif self.decisiontype == "wrong":
             vel = 2 *((wrong_rightArec + wrong_rightBrec) - (wrong_leftArec + wrong_leftBrec))
         elif self.decisiontype == "ratio":
-            vel = 20 * ((self.rightBoundBrec - self.leftBoundBrec) * self.config.cellMetaStats.AratioInt * A_ratio) + ((self.rightBoundArec - self.leftBoundArec) * (1-self.config.cellMetaStats.AratioInt)* (1-A_ratio))
+            sigmoid_ratio = (1/(1+pow(math.e, -1*(A_ratio-0.5)*self.config.cellMetaStats.AratioInt)))
+            allBoundRL = (math.fabs(self.rightBoundBrec - self.leftBoundBrec) + math.fabs(self.rightBoundArec - self.leftBoundArec))
+            BboundRatio = 0
+            AboundRatio = 0
+            if allBoundRL > 0:
+                BboundRatio = (self.rightBoundBrec - self.leftBoundBrec)/allBoundRL
+                AboundRatio = (self.rightBoundArec - self.leftBoundArec)/allBoundRL
+            vel = 20 * ((BboundRatio*sigmoid_ratio) + (AboundRatio*(1-sigmoid_ratio)))
         #rightBound = utils.calculateBoundKinetic(rightBrec+rightArec, BconRight+AconRight, dissocociation, self.newRand, self.noise, self.receptor_mode)
         #leftBound = utils.calculateBoundKinetic(leftBrec+leftArec, BconLeft+AconLeft, dissocociation, self.newRand, self.noise, self.receptor_mode)
 
@@ -203,7 +210,11 @@ class cell(object):
             self.Brec = math.floor(self.MaxReceptors*ratio)
             self.Arec = self.MaxReceptors - self.Brec
         if self.decisiontype == "ratio":
-            self.Brec = math.floor(self.MaxReceptors*self.config.cellMetaStats.Aratio)
+            A_ratio = 0.5
+            if self.Amol + self.Bmol > 0:
+                A_ratio = self.Amol / (self.Amol + self.Bmol)
+            sigmoid_ratio = (1 / (1 + pow(math.e, -1 * (A_ratio - 0.5) * self.config.cellMetaStats.Aratio)))
+            self.Brec = math.floor(self.MaxReceptors*sigmoid_ratio)
             self.Arec = self.MaxReceptors - self.Brec
         if self.decisiontype == "counter":
             if float(interA+interB) != 0:

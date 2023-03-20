@@ -139,8 +139,8 @@ def runIndividual(run, date, config, stress = None, strat = None, envornment = N
         config.concParams.concProfile = envornment
     if Aratio:
         config.cellMetaStats.Aratio = Aratio
-        config.cellStats.Arec = math.floor(Aratio*config.cellStats.maxRec)
-        config.cellStats.Brec = config.cellStats.maxRec - config.cellStats.Arec
+        #config.cellStats.Arec = math.floor(Aratio*config.cellStats.maxRec)
+        #config.cellStats.Brec = config.cellStats.maxRec - config.cellStats.Arec
     if AratioInt:
         config.cellMetaStats.AratioInt = AratioInt
     Sim = simulation.simulation(config)

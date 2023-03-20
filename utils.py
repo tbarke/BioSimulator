@@ -518,6 +518,52 @@ def MI2D2D(X1, X2, Y1, Y2, bins):
 
     return HX-HXgivenY, HX, HXgivenY
 
+def mutual_information2(X, Y, Z, W, bins):
+    # Create a 4D histogram with the given number of bins
+    H_xyzw, edges = np.histogramdd((X, Y, Z, W), bins=bins)
+
+    # Normalize the histogram to get probabilities
+    P_xyzw = H_xyzw / np.sum(H_xyzw)
+
+    # Compute the marginal probabilities
+    P_xzw = np.sum(P_xyzw, axis=(1, 3))
+    P_yzw = np.sum(P_xyzw, axis=(0, 3))
+    P_zw = np.sum(P_xyzw, axis=(2, 3))
+    P_w = np.sum(P_xyzw, axis=(0, 1, 2))
+
+    # Calculate the mutual information
+    MI = 0
+    for i in range(bins):
+        for j in range(bins):
+            for k in range(bins):
+                for l in range(bins):
+                     if P_xyzw[i, j, k, l] > 0 and P_xzw[i, k] > 0 and P_yzw[j, k] > 0 and P_zw[k, l] > 0 and P_w[l] > 0:
+                        MI += P_xyzw[i, j, k, l] * np.log2((P_xyzw[i, j, k, l] * P_w[l]) / (P_xzw[i, k] * P_yzw[j, k] * P_zw[k, l]))
+
+    return MI
+
+def mutual_information1(x, y, z, bins):
+    # Create a 3D histogram with the given number of bins
+    H_xyz, edges = np.histogramdd((x, y, z), bins=bins)
+
+    # Normalize the histogram to get probabilities
+    P_xyz = H_xyz / np.sum(H_xyz)
+
+    # Compute the marginal probabilities
+    P_xz = np.sum(P_xyz, axis=1)
+    P_yz = np.sum(P_xyz, axis=0)
+    P_z = np.sum(P_xz, axis=0)
+
+    # Calculate the mutual information
+    MI = 0
+    for i in range(bins):
+        for j in range(bins):
+            for k in range(bins):
+                if P_xyz[i, j, k] > 0 and P_xz[i, k] > 0 and P_yz[j, k] > 0:
+                    MI += P_xyz[i, j, k] * np.log2(P_xyz[i, j, k] / (P_xz[i, k] * P_yz[j, k]))
+
+    return MI
+
 
 def list_empty(shapeArr, instaniate=None):
     primitive = (int, str, bool, float)
