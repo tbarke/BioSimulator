@@ -150,7 +150,7 @@ def runIndividual(run, date, config, stress = None, strat = None, envornment = N
 def testRun(config, runName, date, specificName = None):
 
     utils.createDirectory(runName, date, config)
-    utils.createDirectory(runName + "/OutputProfiles", date, config)
+    outputProfileDir = utils.createDirectory(runName + "/OutputProfiles", date, config)
     run_Param_list = []
 
     if config.runStats.cellStrategiesArrayFlag:
@@ -233,6 +233,7 @@ def testRun(config, runName, date, specificName = None):
             run += "_" + specificName
         runResults = runIndividual(run, date, config, stress=stress, strat=strat, envornment=envior, Aratio=Aratio, AratioInt=AratioInt)
         outputObj.append(runResults[0])
+        utils.appendData(outputProfileDir, runResults[1], "outputProfilePaths.txt")
         outputFiles.append(runResults[1])
     return outputObj, outputFiles
 

@@ -36,42 +36,44 @@ class output(object):
             self.growth = growth
             self.intweightMImove = intweightMImove
 
-    def __init__(self, runName = None, totalcellsFile = None, totalReceptorsFile = None, boundReceptorsFile = None, internalABFile = None, totalConcsFile = None, cellLocationsFile = None, cellMovementFile = None, enviornmentConcsFile = None, totalMIFile = None, averageMIFile = None, compositeMIFile = None, weightedMIFile = None, averageGrowthFile = None, SIAsVarFile = None, SIAsEntropyFile = None):
+    def __init__(self, configFile = None, runName = None, totalcellsFile = None, totalReceptorsFile = None, boundReceptorsFile = None, internalABFile = None, totalConcsFile = None, cellLocationsFile = None, cellMovementFile = None, enviornmentConcsFile = None, totalMIFile = None, averageMIFile = None, compositeMIFile = None, weightedMIFile = None, averageGrowthFile = None, SIAsVarFile = None, SIAsEntropyFile = None):
         if runName:
             self.runName = runName
         else:
             self.runName = ''
+        self.configFile = configFile
         self.fileName = ''
         self.PrimitiveOutput = self.PrimitiveOutput(totalcellsFile,totalReceptorsFile, boundReceptorsFile, internalABFile, totalConcsFile, cellLocationsFile, cellMovementFile, enviornmentConcsFile)
         self.CalcOutput = self.CalcOutput(totalMIFile, averageMIFile, compositeMIFile, weightedMIFile, averageGrowthFile, SIAsVarFile, SIAsEntropyFile)
         self.RunClacOut = self.RunClacOut()
 
-    def refactorfile(self, file1):
-        return 'Data/' + file1
-        arr = file1.split('/')
-        count = 0
-        for a in arr:
-            count += 1
-            if a == 'Data':
-                break
-        newFile = ''
-        for i in range(count, len(arr), 1):
-            newFile += arr[i]
-            if i != len(arr) - 1:
-                newFile += '/'
-        return '/Users/tyler/Library/CloudStorage/OneDrive-UniversityofNebraska-Lincoln/Biosim/Data/' + newFile
+    def refactorfile(self, file1, path):
+        return path + '/' + file1
 
-    def calculateMeasures(self, config, bins):
+    def calculateMeasures(self, config, bins, path, MItradFlag = True, MI2D2DFlag = True, MI2D1DFlag = True, MI2D1DinFlag = True, growthFlag = True, intweightMImoveFlag = True):
         try:
-            MITrad, MI2D2D, MImove, growth, intweightMImove = outputAnalysis.CalcData(config, bins, True, True, True, True, True, self.refactorfile(self.PrimitiveOutput.internalABFile), self.refactorfile(self.PrimitiveOutput.totalConcsFile), self.refactorfile(self.PrimitiveOutput.cellMovementFile), self.refactorfile(self.PrimitiveOutput.boundReceptorsFile), self.refactorfile(self.PrimitiveOutput.totalcellsFile))
+            internalABFileRef = self.refactorfile(self.PrimitiveOutput.internalABFile, path)
+            totalConcsFileRef = self.refactorfile(self.PrimitiveOutput.totalConcsFile, path)
+            cellMovementFileRef = self.refactorfile(self.PrimitiveOutput.cellMovementFile, path)
+            boundReceptorsFileRef = self.refactorfile(self.PrimitiveOutput.boundReceptorsFile, path)
+            totalcellsFileRef = self.refactorfile(self.PrimitiveOutput.totalcellsFile, path)
+
+            MITrad, MI2D2D, MImove, growth, intweightMImove = outputAnalysis.CalcData(config, bins, MITradFlag = MItradFlag, MI2d2dFlag = MI2D2DFlag, MIMoveFlag = MI2D1DFlag, growthFlag = growthFlag, intWeightFlag = intweightMImoveFlag, intABFile = internalABFileRef, extABFile = totalConcsFileRef, moveFile = cellMovementFileRef, boundFile = boundReceptorsFileRef, totalCellsFile =totalcellsFileRef)
             #TODO fix below and in write (object should be lower case to use the constructor, but this will break below)
-            #self.RunClacOut.MItrad = MITrad
-            #self.RunClacOut.MI2D2D = MI2D2D
-            #self.RunClacOut.MI2D1D = MImove
-            #TODO implement below
-            #self.RunClacOut.MI2D1Din = MI2D1Din
-            #self.RunClacOut.growth = growth
-            self.RunClacOut.intweightMImove = intweightMImove
+            if MItradFlag:
+                self.RunClacOut.MItrad = MITrad
+            if MI2D2DFlag:
+                self.RunClacOut.MI2D2D = MI2D2D
+            if MI2D1DFlag:
+                self.RunClacOut.MI2D1D = MImove
+            if MI2D1DinFlag:
+                pass
+                #TODO implement
+                #self.RunClacOut.MI2D1Din = MI2D1Din
+            if growthFlag:
+                self.RunClacOut.growth = growth
+            if intweightMImoveFlag:
+                self.RunClacOut.intweightMImove = intweightMImove
         except Exception as e:
             l.handleException(e)
 
@@ -107,13 +109,9 @@ class output(object):
         config.read(filename)
 
         paramOrg = self.__dict__
-        primitive = (int, str, bool, float)
         for key1, value1 in paramOrg.items():
-            try:
-                if isinstance(value1, primitive):
-                    paramOrg[key1] = config.get('PrimitiveOutput', key1)
-                    continue
-            except:
+            if key1 == 'configFile' or key1 == 'runName' or key1 == 'fileName':
+                paramOrg[key1] = config.get('nosection', key1)
                 continue
             paramnames = value1.__dict__
             for key2 in paramnames:
@@ -129,11 +127,12 @@ class output(object):
         priDict = {}
         calcDict = {}
         runClacDict = {}
+        nosectionDict = {}
         paramOrg = self.__dict__
         primitive = (int, str, bool, float)
         for key1, value1 in paramOrg.items():
             if isinstance(value1, primitive):
-                config['nosection'] = {key1: value1}
+                nosectionDict[key1] = value1
                 continue
             paramnames = value1.__dict__
             for key2, value2 in paramnames.items():
@@ -150,7 +149,7 @@ class output(object):
         config['PrimitiveOutput'] = priDict
         config['CalcOutput'] = calcDict
         config['RunClacOut'] = runClacDict
-
+        config['nosection'] = nosectionDict
         fullpath = path
         if not absolute:
             nameDir = self.runName.split('/')[0]

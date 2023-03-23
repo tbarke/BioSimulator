@@ -775,8 +775,8 @@ class simulation(object):
 
         if self.SimEnviornment.cellsAlive() < 100:
             l.log("Warning: less than 100 cells alive at the end")
-        config.writeConfig(config.runStats.saveDir + "/" + date + "/" + run + "/config.cfg")
-        out = output.output(runName = run,enviornmentConcsFile = enviornmentConcsFile.replace(config.runStats.saveDir+'/', ''), totalcellsFile = totalCellsFile.replace(config.runStats.saveDir+'/', ''), totalReceptorsFile = totalReceptorsFile.replace(config.runStats.saveDir+'/', ''), boundReceptorsFile = boundReceptorsFile.replace(config.runStats.saveDir+'/', ''), internalABFile = internalABFile.replace(config.runStats.saveDir+'/', ''), totalConcsFile = totalConcsFile.replace(config.runStats.saveDir+'/', ''), cellLocationsFile = cellLocationsFile.replace(config.runStats.saveDir+'/', ''), cellMovementFile = cellMovementFile.replace(config.runStats.saveDir+'/', ''))
+        config_path = config.writeConfig(config.runStats.saveDir + "/" + date + "/" + run + "/config.cfg")
+        out = output.output(configFile = config_path.replace(config.runStats.saveDir+'/', ''), runName = run,enviornmentConcsFile = enviornmentConcsFile.replace(config.runStats.saveDir+'/', ''), totalcellsFile = totalCellsFile.replace(config.runStats.saveDir+'/', ''), totalReceptorsFile = totalReceptorsFile.replace(config.runStats.saveDir+'/', ''), boundReceptorsFile = boundReceptorsFile.replace(config.runStats.saveDir+'/', ''), internalABFile = internalABFile.replace(config.runStats.saveDir+'/', ''), totalConcsFile = totalConcsFile.replace(config.runStats.saveDir+'/', ''), cellLocationsFile = cellLocationsFile.replace(config.runStats.saveDir+'/', ''), cellMovementFile = cellMovementFile.replace(config.runStats.saveDir+'/', ''))
         outPath = out.write(config.runStats.saveDir + "/" + date).replace(config.runStats.saveDir+'/', '')
         return out, outPath
 

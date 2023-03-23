@@ -16,9 +16,6 @@ class enviornment(object):
 
     distancetraveled = 0
 
-    space = 2000
-    lowSpace = 1000
-
     def findCurrentCellCount(self):
         allCells = self.positionHash
         sum = 0
@@ -97,6 +94,9 @@ class enviornment(object):
         self.Recep_Var_Arr_Output = []
 
         self.timeStep = config.simParams.simTimeStep
+
+        self.highSpace = config.simParams.highSpace
+        self.lowSpace = config.simParams.lowSpace
 
 
     def addlogdoubletime(self):
@@ -218,7 +218,7 @@ class enviornment(object):
         cellCount = 0.0
         for cells in AllCells:
             cellCount += float(len(AllCells[cells]))
-        if cellCount < self.space:
+        if cellCount < self.highSpace:
             return False
         prob = self.lowSpace/cellCount
         for cells in AllCells:

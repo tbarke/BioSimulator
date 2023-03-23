@@ -43,6 +43,8 @@ class configuration(object):
             self.lam = 0.4
             self.gamma = 0.1
             self.aknoght = 200
+            self.highSpace = 2000
+            self.lowSpace = 1000
 
     class CellMetaStats:
         def __init__(self):
@@ -130,6 +132,64 @@ class configuration(object):
         self.cellStats = self.CellStats()
 
     def parse_string(self, input_str):
+        def parse_value(input_string):
+            # Try to parse the string as an integer
+            match = re.match(r'^[-+]?\d+$', input_string)
+            if match:
+                return int(input_string)
+
+            # Try to parse the string as a float
+            match = re.match(r'^[-+]?\d+\.\d+$', input_string)
+            if match:
+                return float(input_string)
+
+            # Try to parse the string as a boolean
+            if input_string.lower() in ['true', 'false']:
+                return input_string == 'True' or input_string == 'true'
+
+
+            # Return the string as is
+            if input_string[0] == '\'' and input_string[len(input_string)-1] == '\'':
+                input_string = input_string.replace('\'','')
+
+            return input_string
+
+        def parse_string_list(input_string):
+            # Check if the string starts and ends with square brackets
+            if not input_string.startswith('[') or not input_string.endswith(']'):
+                return None
+
+            # Remove square brackets from the beginning and end of the string
+            input_string = input_string[1:-1]
+
+            if input_string.strip() == "":
+                return []
+
+            # Split the string by commas and strip whitespace from each element
+            string_list = [elem.strip() for elem in input_string.split(',')]
+
+            # Check if any element in the list is empty or contains square brackets
+            for elem in string_list:
+                if not elem or '[' in elem or ']' in elem:
+                    return None
+
+            # Return the list of strings
+            return string_list
+
+        input_str = input_str.strip()
+        list = parse_string_list(input_str)
+        if list == []:
+            return list
+        if list:
+            ret_list = []
+            for l in list:
+                ret_list.append(parse_value(l))
+            return ret_list
+
+        return parse_value(input_str)
+
+    """""
+    def parse_string(self, input_str):
         input_str = input_str.strip()
         # Check for integer
         if re.match(r'^[-+]?\d+$', input_str):
@@ -153,7 +213,7 @@ class configuration(object):
 
         # Default to returning the input string as a string
         return input_str
-
+    """""
     def readConfig(self, filename, supressWarnings = True):
         config = configparser.ConfigParser()
         config.read(filename)
@@ -178,8 +238,8 @@ class configuration(object):
                               'runStress': self.runStats.runStress,
                               'cellStrategiesArrayFlag': self.runStats.cellStrategiesArrayFlag,
                               'enviornmentArrayFlag': self.runStats.enviornmentArrayFlag,
-                              'runNoise': self.runStats.runDetermine,
-                              'runDetermine': self.runStats.stressArray,
+                              'runNoise': self.runStats.runNoise,
+                              'runDetermine': self.runStats.runDetermine,
                               'beginningRandInt': self.runStats.beginningRandInt,
                               'cellRatioAEmphasis': self.runStats.cellRatioAEmphasis,
                               'cellRatioAEmphasisFlag': self.runStats.cellRatioAEmphasisFlag,
@@ -256,7 +316,10 @@ class configuration(object):
                                    'lam': self.simParams.lam,
                                    'gamma': self.simParams.gamma,
                                    'aknoght': self.simParams.aknoght,
-                                   'presetSave': self.simParams.presetSave
+                                   'presetSave': self.simParams.presetSave,
+                                   'highSpace': self.simParams.highSpace,
+                                   'lowSpace': self.simParams.lowSpace
+
                                }
 
         config['ConcParams'] = {'diffCoeff': self.concParams.diffCoeff,
@@ -279,3 +342,4 @@ class configuration(object):
                                }
         with open(filename, 'w+') as configfile:
             config.write(configfile)
+        return filename
