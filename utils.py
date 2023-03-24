@@ -683,13 +683,25 @@ def createDirectory(run, date, config):
     isPath = os.path.isdir(path)
     if not isPath:
         os.mkdir(path)
-    return str(date)
+    return path
 
 def saveData(dir, data, fileName):
     full_path = dir + "/" + fileName
     with open(full_path, 'wb') as f:
         pickle.dump(data, f)
     return full_path
+
+def appendData(dir, data, fileName):
+    full_path = dir + "/" + fileName
+    with open(full_path, 'a+') as f:
+        f.write(data + '\n')
+    return full_path
+
+def loadPlain(fileName):
+    lines = []
+    with open(fileName, 'r') as file:
+        lines = file.readlines()
+    return lines
 
 def loadData(filename):
     with open(filename, 'rb') as f:
@@ -772,7 +784,104 @@ def createGifBar(config, arr, celllocs, name):
     imageio.mimsave('sim_gifs/' + name + '.gif', ims2)
 
 def loadMetaData(filename = None):
+    import re
     metaDict = {}
+
+    """""
+    def parse_string(input_str):
+        input_str = input_str.strip()
+        if input_str.startswith('[') and input_str.endswith(']'):
+            # Remove square brackets from the beginning and end of the string
+            new_input_string = input_str.strip('[]')
+
+            bool_list = []
+            for value in new_input_string.split():
+                try:
+                    bool_list.append(bool(value))
+                except ValueError:
+                    break
+            else:
+                return bool_list
+        # Check for integer
+        if re.match(r'^[-+]?\d+$', input_str):
+            return int(input_str)
+
+        # Check for float
+        if re.match(r'^[-+]?(\d+(\.\d*)?|\.\d+)$', input_str):
+            return float(input_str)
+
+        # Check for list of integers or floats
+        if re.match(r'^\[(?:\s*[-+]?(?:\d+(?:\.\d*)?|\.\d+)\s*,?)*\]$', input_str):
+            values_str = re.findall(r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)', input_str)
+            values = [int(x) if x.isdigit() else float(x) for x in values_str]
+            return values
+
+        # Check for boolean
+        if input_str.lower() == 'true':
+            return True
+        if input_str.lower() == 'false':
+            return False
+
+        # Default to returning the input string as a string
+        return input_str
+    """""
+
+    def parse_string(input_str):
+        def parse_value(input_string):
+            # Try to parse the string as an integer
+            match = re.match(r'^[-+]?\d+$', input_string)
+            if match:
+                return int(input_string)
+
+            # Try to parse the string as a float
+            match = re.match(r'^[-+]?\d+\.\d+$', input_string)
+            if match:
+                return float(input_string)
+
+            # Try to parse the string as a boolean
+            if input_string.lower() in ['true', 'false']:
+                return input_string == 'True' or input_string == 'true'
+
+
+            # Return the string as is
+            if input_string[0] == '\'' and input_string[len(input_string)-1] == '\'':
+                input_string = input_string.replace('\'','')
+
+            return input_string
+
+        def parse_string_list(input_string):
+            # Check if the string starts and ends with square brackets
+            if not input_string.startswith('[') or not input_string.endswith(']'):
+                return None
+
+            # Remove square brackets from the beginning and end of the string
+            input_string = input_string[1:-1]
+
+            if input_string.strip() == "":
+                return []
+
+            # Split the string by commas and strip whitespace from each element
+            string_list = [elem.strip() for elem in input_string.split(',')]
+
+            # Check if any element in the list is empty or contains square brackets
+            for elem in string_list:
+                if not elem or '[' in elem or ']' in elem:
+                    return None
+
+            # Return the list of strings
+            return string_list
+
+        input_str = input_str.strip()
+        list = parse_string_list(input_str)
+        if list == []:
+            return list
+        if list:
+            ret_list = []
+            for l in list:
+                ret_list.append(parse_value(l))
+            return ret_list
+
+        return parse_value(input_str)
 
     def Map(line):
         class metaFileException(Exception):
@@ -782,15 +891,63 @@ def loadMetaData(filename = None):
             l.log("error: meta format is not correct on line: " + line)
             raise metaFileException()
 
-        metaDict[arr[0]] = arr[1]
+        metaDict[arr[0]] = parse_string(arr[1])
 
 
     if not filename:
         filename = "SimMeta.txt"
     with open(filename, "r") as file:
-        count = 0
         for line in file:
             stripped_line = line.replace(" ", "").replace("\t", "").replace("\n", "")
+            #comments in meta file
+            if stripped_line[0] == '#':
+                continue
             Map(stripped_line)
 
     return metaDict
+
+def findRunNames(root_path, DefaultFlag = True, silence = True):
+    import os
+    from datetime import datetime
+    def getDirs(path):
+        directories = []
+        for dir in os.listdir(path):
+            if os.path.isdir(os.path.join(path, dir)):
+                directories.append(dir)
+        return directories
+
+    def findGivenPath(root_path):
+        dirs = getDirs(root_path)
+        runDates = []
+        for dir in dirs:
+            try:
+                datetime.strptime(dir, '%Y-%m-%d')
+            except:
+                continue
+            runNames = getDirs(root_path + '/' + dir)
+            for run in runNames:
+                runDates.append([dir, run])
+        return runDates
+
+    runDates = []
+    try:
+        runDates = findGivenPath(root_path)
+    except FileNotFoundError:
+        if not silence:
+            l.log("Directory Given Doesn't Exist")
+    if runDates == [] and DefaultFlag:
+        try:
+            runDates = findGivenPath('Data')
+            if not silence and not runDates == []:
+                l.log("could not find any runs in provided Directory, but found some in default \'Data\' Directory: ")
+        except FileNotFoundError:
+            pass
+    elif not silence and runDates == []:
+        l.log("could not find any runs in provided Directory")
+
+    return runDates
+
+def pathExists(path):
+    import os
+    return os.path.exists(path)
+

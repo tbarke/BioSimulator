@@ -45,11 +45,12 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     extAB = None
     move = None
     boundAB = None
-    if MITradFlag or MI2d2dFlag or MIMoveFlag:
+    intAB = None
+    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag:
         extAB = utils.loadDataDate(extABFile, False)
-    if MIMoveFlag:
+    if MIMoveFlag or intWeightFlag:
         move = utils.loadDataDate(moveFile, False)
-    if MITradFlag or MI2d2dFlag:
+    if MITradFlag or MI2d2dFlag or MIMoveFlag:
         boundAB = utils.loadDataDate(boundFile, False)
 
     if intWeightFlag:
@@ -83,7 +84,7 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     intBMove = []
     intAMove = []
 
-    if MITradFlag or MI2d2dFlag or MIMoveFlag:
+    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag:
         for i in range(len(extAB[0])):
             for j in range(len(extAB[0][i])):
                 count += 1
@@ -101,7 +102,7 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
                         boundA.append(0)
                         boundB.append(0)
 
-                if MITradFlag:
+                if MITradFlag or MIMoveFlag or MI2d2dFlag:
                     extAL.append(extAB[0][i][j][0])
                     extAR.append(extAB[0][i][j][1])
                     #------------bound A------------
@@ -156,33 +157,30 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
 
 
     #------------------------
-    k = 10
-    intAextAL = reduce( intAextAL, k)
-    intAextAR = reduce(intAextAR , k)
-    intAMove = reduce(intAMove , k)
+    #k = 10
+    #intAextAL = reduce( intAextAL, k)
+    #intAextAR = reduce(intAextAR , k)
+    #intAMove = reduce(intAMove , k)
 
-    intBextBL = reduce(intBextBL, k)
-    intBextBR = reduce(intBextBR, k)
-    intBMove = reduce(intBMove, k)
+    #intBextBL = reduce(intBextBL, k)
+    #intBextBR = reduce(intBextBR, k)
+    #intBMove = reduce(intBMove, k)
     if MITradFlag:
-        #MITrad = MI_trad([extAL, extAR, extBL, extBR], [boundAL, boundAR, boundBL, boundBR], k, bins)
-        MITrad = 0
+        MITrad = MI_trad([extAL, extAR, extBL, extBR], [boundAL, boundAR, boundBL, boundBR], k, bins)
     if MI2d2dFlag:
-        #MI2D2D1 = utils.MI2D2D(extAR, extAL, boundAR, boundAL, bins)
-        #MI2D2D2 = utils.MI2D2D(extBR, extBL, boundBR, boundBL, bins)
-        #MI2D2D = MI2D2D1 + MI2D2D2
-        MI2D2D = 0
+
+        MI2D2D1 = utils.MI2D2D(extAR, extAL, boundAR, boundAL, bins)[0]
+        MI2D2D2 = utils.MI2D2D(extBR, extBL, boundBR, boundBL, bins)[0]
+        MI2D2D = MI2D2D1 + MI2D2D2
     if MIMoveFlag:
-        #MImove1 = utils.MI2D1D(extAR, extAL, move_arr, bins)
-        #MImove2 = utils.MI2D1D(extBR, extBL, move_arr, bins)
-        #MImove = MImove1 + MImove2
-        MImove = 0
+        MImove1 = utils.MI2D1D(extAR, extAL, move_arr, bins)[0]
+        MImove2 = utils.MI2D1D(extBR, extBL, move_arr, bins)[0]
+        MImove = MImove1 + MImove2
     if growthFlag:
-        #growth = calcGrowth(totalCellsFile, config)
-        growth = 0
+        growth = calcGrowth(totalCellsFile, config)
     if intWeightFlag:
-        intWeightAMI = utils.MI2D1D(intAextAL, intAextAR, intAMove, bins)
-        intWeightBMI = utils.MI2D1D(intBextBL, intBextBR, intBMove, bins)
+        intWeightAMI = utils.MI2D1D(intAextAL, intAextAR, intAMove, bins)[0]
+        intWeightBMI = utils.MI2D1D(intBextBL, intBextBR, intBMove, bins)[0]
         intweightMIMove = intWeightAMI + intWeightBMI
 
 
@@ -365,3 +363,120 @@ def createFigureMIGrowthStress(growths, MI_moves, MI_trad, Strategies, stresses,
     plt.xlim([0, .2])
     plt.ylim([-2, 2])
     plt.show()
+
+def createFigureGrowthMISyntactic(config, outputObjects):
+    colors_plot1 = []
+    colors_plot2 = []
+    MImoves = []
+    MIs = []
+    MITrad = []
+    growths = []
+    count = -1
+    ratioA = []
+    ratioAint = []
+    MImovesDiff = []
+    MIsDiff = []
+    zero_counts = []
+    MI_tradDiff = []
+    zero_count = -1
+
+    red_color = [1, 0, 0]
+    green_color = [0, 1, 0]
+    blue_color = [0, 0, 1]
+    yellow_color = [1, 1, 0]
+    colors_4D = [red_color, blue_color, green_color, yellow_color]
+    for i in range(len(config.runStats.cellRatioAEmphasis)):
+        for j in range(len(config.runStats.cellRatioAIntEmphasis)):
+            zero_count += 1
+            if config.runStats.cellRatioAEmphasis[i] == 0:
+                zero_counts.append(zero_count)
+    for i in range(len(config.runStats.cellRatioAEmphasis)):
+        for j in range(len(config.runStats.cellRatioAIntEmphasis)):
+            # print("here" + str(output_objects[count].RunClacOut.MI2D2D))
+            count += 1
+            if outputObjects[
+                count].RunClacOut.MI2D2D != '':  # and c.runStats.cellRatioAEmphasis[i] >= 0 and c.runStats.cellRatioAIntEmphasis[j] >= 0:
+                # if c.runStats.cellRatioAEmphasis[i] != 0:
+                #    colors_plot.append([1,0,0])
+                # else:
+                #    colors_plot.append([0,0,1])
+                colors_plot1.append(colors.findColor4D(colors_4D, (config.runStats.cellRatioAEmphasis[i] + 50) / 100,
+                                                       (config.runStats.cellRatioAIntEmphasis[j] + 50) / 100))
+                ratioA.append(config.runStats.cellRatioAEmphasis[i])
+                ratioAint.append(config.runStats.cellRatioAIntEmphasis[j])
+                color_Scheme1 = ['Black', 'Red']
+                color_Scheme2 = ['Black', 'Blue']
+                # colors_plot1.append(colors.findcolor(50, -50, color_Scheme1, c.runStats.cellRatioAEmphasis[i]))
+                # colors_plot2.append(colors.findcolor(50, -50, color_Scheme2, c.runStats.cellRatioAIntEmphasis[j]))
+                #mimove1 = float(outputObjects[count].RunClacOut.MI2D1D.split(',')[0][1:].strip())
+                #mimove2 = float(outputObjects[count].RunClacOut.MI2D1D.split(',')[3][1:].strip())
+                mimove_count = outputObjects[count].RunClacOut.MI2D1D
+
+                #mimovezero1 = float(outputObjects[zero_counts[j]].RunClacOut.MI2D1D.split(',')[0][1:].strip())
+                #mimovezero2 = float(outputObjects[zero_counts[j]].RunClacOut.MI2D1D.split(',')[3][1:].strip())
+                #mimove_zero = outputObjects[zero_counts[j]].RunClacOut.MI2D1D
+                # MImoves.append(output_objects[count].RunClacOut.MI2D1D)
+                MImoves.append(mimove_count)
+                # MImovesDiff.append(output_objects[count].RunClacOut.MI2D1D - output_objects[zero_counts[j]].RunClacOut.MI2D1D)
+                #MImovesDiff.append(mimove_count - mimove_zero)
+
+                #num_zero1 = float(outputObjects[zero_counts[j]].RunClacOut.MI2D2D.split(',')[0][1:].strip())
+                #num_zero2 = float(outputObjects[zero_counts[j]].RunClacOut.MI2D2D.split(',')[3][1:].strip())
+                #MI2d2d_zero = outputObjects[zero_counts[j]].RunClacOut.MI2D2D
+                #num1 = float(outputObjects[count].RunClacOut.MI2D2D.split(',')[0][1:].strip())
+                #num2 = float(outputObjects[count].RunClacOut.MI2D2D.split(',')[3][1:].strip())
+                mi2d2d_count = outputObjects[count].RunClacOut.MI2D2D
+                # print(num)
+                MIs.append(mi2d2d_count)
+                #MIsDiff.append(mi2d2d_count - MI2d2d_zero)
+                MITrad.append(outputObjects[count].RunClacOut.MItrad)
+                #MI_tradDiff.append((outputObjects[zero_counts[j]].RunClacOut.MItrad) - (outputObjects[count].RunClacOut.MItrad))
+                growths.append(outputObjects[count].RunClacOut.growth)
+
+    """""
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Plot the data points as scatter plot
+    ax.scatter(ratioA, ratioAint, MImovesDiff)
+
+    # Create a surface from the data points
+    surf = ax.plot_trisurf(ratioA, ratioAint, MImovesDiff, cmap='viridis', edgecolor='none')
+
+    # Add a color bar to the plot
+    fig.colorbar(surf)
+
+    # Set labels for the axes
+    ax.set_xlabel('Receptor Allocation Sigmoid Coefficient')
+    ax.set_ylabel('Strategy Sigmoid Coefficient')
+    ax.set_zlabel('\'Useful\' Information (Adaptive) - \'Useful\' Information (Equal)')
+
+    # Show the plot
+    plt.show()
+    l.exit()
+    """""
+
+    rects = colors.drawRectangles(100, colors_4D)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    ax1.scatter(MImoves, growths, color=colors_plot1, zorder=3)
+    # plt.scatter(2, 2, color = 'Blue', label = "Strategy Sigmoid Coefficient")
+    # plt.scatter(2, 2, color = 'Red', label = "Receptor Allocation Sigmoid Coefficient")
+    # ax1.set_xlabel("\'Useful\' Information")
+    ax1.set_xlabel("Syntactic Information")
+    # plt.xlim([0, 0.6])
+    ax1.set_ylabel("Growth")
+    # plt.ylim([-.1, .25])
+    ax1.grid(zorder=0)
+    # plt.legend()
+
+    for box in rects:
+        ax2.add_patch(box)
+
+    ax2.set_xlim(0, 1)
+    ax2.set_ylim(0, 1)
+    ax2.set_xticks([0, 1], [-50, 50])
+    ax2.set_yticks([0, 1], [-50, 50])
+    ax2.set_xlabel("Receptor Allocation Gain")
+    ax2.set_ylabel("Strategy Gain")
+    plt.show()
+

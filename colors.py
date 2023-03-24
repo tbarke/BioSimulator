@@ -99,3 +99,15 @@ def drawRectangles(boxes, colors_4D):
             j_index = j*index
             rects.append(Rectangle((i_index, j_index), index, index, facecolor=findColor4D(colors_4D, i_index, j_index )))
     return rects
+
+def d3color(emp_red, emp_blue):
+    color_Scheme1 = ['Black', 'Red']
+    color_Scheme2 = ['Black', 'Blue']
+    color_red = findcolor(50, 0,color_Scheme1, emp_red, absolute=False)
+    color_blue = findcolor(50,0,color_Scheme2, emp_blue, absolute=False)
+    color_Scheme3 = [color_red, color_blue]
+    dist = 0
+    if color_red[0] + color_blue[2] >0:
+        dist = color_blue[2] / (color_red[0] + color_blue[2])
+    color_purp = findcolor(1,0,color_Scheme3, dist)
+    return color_purp
