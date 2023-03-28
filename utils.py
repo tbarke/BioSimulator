@@ -573,7 +573,7 @@ def list_empty(shapeArr, instaniate=None):
     arr = []
     for i in range(shapeArr[0]):
         obj = instaniate
-        if not is_primitive(instaniate):
+        if not is_primitive(instaniate) and not instaniate == None:
             obj = instaniate.copy()
         arr.append(obj)
     if len(shapeArr) == 1:
@@ -585,6 +585,8 @@ def list_empty(shapeArr, instaniate=None):
 
 
 def MI2D1D(X1,X2,Y,bins):
+    if len(X1) < 10:
+        return 0, 0, 0
     def matchBinPos(binPos, y):
         for i in range(len(binPos) - 1):
             if y >= binPos[i] and y < binPos[i + 1]:
@@ -951,3 +953,38 @@ def pathExists(path):
     import os
     return os.path.exists(path)
 
+def transpose_list(lst, degree = 1):
+    # takes a list of data and transposes the data, can take in different sizes but will populated with the largest size if the array is not the same at every index
+    # needs work for degree greater than 1
+    # [1,2] [3,4] = [1,3] [2,4]
+    maxSize = 0
+    for l in lst:
+        length_sec = len(l)
+        if length_sec > maxSize:
+            maxSize = length_sec
+    newList = list_empty([maxSize, len(lst)])
+    for i in range(len(lst)):
+        for j in range(len(lst[i])):
+            newList[j][i] = lst[i][j]
+    return newList
+
+
+def randomizeData(data_size, dependence, inputarraySize, outputarraySize, initVar=1):
+    inputArr = []
+    for i in range(inputarraySize):
+        inputArr.append(np.random.normal(0, 0.1, data_size))
+
+    def findRandomDependence(arr):
+        newArr = []
+        for i in range(len(arr[0])):
+            point = 0
+            for j in range(inputarraySize):
+                point += np.random.normal(arr[j][i] + arr[j][i] * j, initVar * (1 - dependence), 1)[0]
+            newArr.append(point)
+        return newArr
+
+    outputArr = []
+    for i in range(outputarraySize):
+        outputArr.append(findRandomDependence(inputArr))
+
+    return inputArr, outputArr
