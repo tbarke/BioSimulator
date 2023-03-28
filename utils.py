@@ -891,14 +891,14 @@ def loadMetaData(filename = None):
             l.log("error: meta format is not correct on line: " + line)
             raise metaFileException()
 
-        metaDict[arr[0]] = parse_string(arr[1])
+        metaDict[arr[0].strip()] = parse_string(arr[1].strip())
 
 
     if not filename:
         filename = "SimMeta.txt"
     with open(filename, "r") as file:
         for line in file:
-            stripped_line = line.replace(" ", "").replace("\t", "").replace("\n", "")
+            stripped_line = line.strip()
             #comments in meta file
             if stripped_line[0] == '#':
                 continue
