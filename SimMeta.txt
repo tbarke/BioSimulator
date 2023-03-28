@@ -1,11 +1,11 @@
 path = /Users/tyler/Library/CloudStorage/OneDrive-UniversityofNebraska-Lincoln/Biosim/Data
-givenRunName = LocalHighPoints
+givenRunName = manaFromHeavenRatioSmall
 newRun = True
 runSim = False
 refactorOutputProfilePaths = False
 analyzeResults = True
-givenDate = 2023-03-23
-calculateResults = True
+givenDate = 2023-03-27
+calculateResults = False
 #calc = 0: 'Traditional MI Calculation', 1: 'New Syntactic Caclulation', 2: 'New Useful Calculation',3: 'New Useful Input Calculation', 4: 'Growth Calculation', 5: 'New Internal Weighted Calculation'}
-calculation_parameters = [True, True, True, True, True, True]
-config_file = Configs/LocalHighPoints_3-23-23.cfg
+calculation_parameters = [True, True, True, True, True, True, True]
+config_file = Configs/manaFromHeavenRatioSmall_3-27-23.cfg

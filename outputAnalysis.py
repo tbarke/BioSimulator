@@ -26,6 +26,82 @@ def calcGrowth(file, config):
     avg_growth = (avg_growth / len(growth)) * (1 / config.simParams.simTimeStep)
     return avg_growth
 
+def MIMoveWeighted(concs, moves, inters, binsMI, binsintAB):
+    # list of concs: AR, AL, BR, BL
+    # list of moves: absolute velocity
+    # list of internal states intA, intB
+    # find max intA and intA
+
+    def findMI(indexes):
+        currConcsAR = []
+        currConcsAL = []
+        currConcsBR = []
+        currConcsBL = []
+        currMoves = []
+        for ind in indexes:
+            currConcsAR.append(concs[0][ind])
+            currConcsAL.append(concs[1][ind])
+            currConcsBR.append(concs[2][ind])
+            currConcsBL.append(concs[3][ind])
+
+            currMoves.append(moves[0][ind])
+        MImove1 = utils.MI2D1D(currConcsAR, currConcsAL, currMoves, binsMI)[0]
+        MImove2 = utils.MI2D1D(currConcsBR, currConcsBL, currMoves, binsMI)[0]
+        return MImove1, MImove2
+
+
+    def findBins(intA, intB):
+        maxintA = max(intA)
+        maxintB = max(intB)
+        minintA = min(intA)
+        minintB = min(intB)
+        binWidthA = (maxintA-minintA)/binsintAB
+        binWidthB = (maxintB-minintB)/binsintAB
+        binedgesA = utils.list_empty([binsintAB+1], 0)
+        binedgesB = utils.list_empty([binsintAB+1], 0)
+        binAB = utils.list_empty([binsintAB, binsintAB], [])
+        for i in range(binsintAB+1):
+            binedgesA[i] = minintA + binWidthA * i
+            binedgesB[i] = minintB + binWidthB * i
+        binedgesA[0] = binedgesA[0] - 0.01
+        binedgesB[0] = binedgesB[0] - 0.01
+
+        binedgesA[binsintAB] = binedgesA[binsintAB] + 0.01
+        binedgesB[binsintAB] = binedgesB[binsintAB] + 0.01
+        return binedgesA, binedgesB, binAB
+
+    # divide into total bins used
+    binedgeA, binedgeB, binAB = findBins(inters[0], inters[1])
+    #print(binedgeA)
+    #print(binedgeB)
+
+    def findBin(intA, intB):
+        for i in range(len(binedgeA)):
+            if intA >= binedgeA[i] and intA < binedgeA[i + 1]:
+                for j in range(len(binedgeA)):
+                    if intB >= binedgeB[j] and intB < binedgeB[j +1]:
+                        return i, j
+
+    for i in range(len(inters[0])):
+        curr_intA = inters[0][i]
+        curr_intB = inters[1][i]
+        indexA, indexB = findBin(curr_intA, curr_intB)
+        binAB[indexA][indexB].append(i)
+
+    binProbs = utils.list_empty([binsintAB, binsintAB], 0)
+    for i in range(len(binAB)):
+        for j in range(len(binAB[0])):
+            binProbs[i][j] = len(binAB[i][j])/len(moves[0])
+
+    MIweight = 0
+    binABind = utils.list_empty([binsintAB, binsintAB], [])
+    for i in range(len(binAB)):
+        for j in range(len(binAB[0])):
+            currMIA, currMIB = findMI(binAB[i][j])
+            binABind[i][j] = [currMIA, currMIB]
+            MIweight += (currMIA+currMIB)*binProbs[i][j]
+    return MIweight, binABind
+
 def MI_trad(ext, bound, k, bins):
     dataX = []
     dataY = []
@@ -41,7 +117,7 @@ def MI_trad(ext, bound, k, bins):
     MI = MI_obj.AltMI(dataX, dataY, bins)[0]
     return MI
 
-def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWeightFlag, intABFile = None, extABFile = None, moveFile = None, boundFile = None, totalCellsFile = None):
+def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWeightFlag, ABintdynamicWeightFlag, intABFile = None, extABFile = None, moveFile = None, boundFile = None, totalCellsFile = None):
     extAB = None
     move = None
     boundAB = None
@@ -84,6 +160,9 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     intBMove = []
     intAMove = []
 
+    intAall =[]
+    intBall = []
+
     if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag:
         for i in range(len(extAB[0])):
             for j in range(len(extAB[0][i])):
@@ -117,6 +196,8 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
                 if intWeightFlag:
                     intA_curr = intAB[0][i][j][0]
                     intB_curr = intAB[0][i][j][1]
+                    intAall.append(intA_curr)
+                    intBall.append(intB_curr)
                     if intA_curr > intB_curr:
                         intBextBL.append(extAB[0][i][j][2])
                         intBextBR.append(extAB[0][i][j][3])
@@ -155,16 +236,18 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
 
     move_arr = reduce(move_arr, k)
 
+    intAall = reduce(intAall, k)
+    intBall = reduce(intBall, k)
 
-    #------------------------
-    #k = 10
-    #intAextAL = reduce( intAextAL, k)
-    #intAextAR = reduce(intAextAR , k)
-    #intAMove = reduce(intAMove , k)
+    intAextAL = reduce( intAextAL, k)
+    intAextAR = reduce(intAextAR , k)
+    intAMove = reduce(intAMove , k)
 
-    #intBextBL = reduce(intBextBL, k)
-    #intBextBR = reduce(intBextBR, k)
-    #intBMove = reduce(intBMove, k)
+    intBextBL = reduce(intBextBL, k)
+    intBextBR = reduce(intBextBR, k)
+    intBMove = reduce(intBMove, k)
+
+
     if MITradFlag:
         MITrad = MI_trad([extAL, extAR, extBL, extBR], [boundAL, boundAR, boundBL, boundBR], k, bins)
     if MI2d2dFlag:
@@ -182,6 +265,13 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
         intWeightAMI = utils.MI2D1D(intAextAL, intAextAR, intAMove, bins)[0]
         intWeightBMI = utils.MI2D1D(intBextBL, intBextBR, intBMove, bins)[0]
         intweightMIMove = intWeightAMI + intWeightBMI
+    if ABintdynamicWeightFlag:
+        #concs, moves, inters, binsMI, binsintAB
+        concs = [extAR, extAL, extBR, extBL]
+        moves = [move_arr]
+        inters = [intAall, intBall]
+        weightedMI, binMI = MIMoveWeighted(concs, moves, inters, 30, 20)
+        return weightedMI
 
 
     return MITrad, MI2D2D, MImove, growth, intweightMIMove
@@ -395,7 +485,7 @@ def createFigureGrowthMISyntactic(config, outputObjects):
             # print("here" + str(output_objects[count].RunClacOut.MI2D2D))
             count += 1
             if outputObjects[
-                count].RunClacOut.MI2D2D != '':  # and c.runStats.cellRatioAEmphasis[i] >= 0 and c.runStats.cellRatioAIntEmphasis[j] >= 0:
+                count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
                 # if c.runStats.cellRatioAEmphasis[i] != 0:
                 #    colors_plot.append([1,0,0])
                 # else:
@@ -433,15 +523,15 @@ def createFigureGrowthMISyntactic(config, outputObjects):
                 #MI_tradDiff.append((outputObjects[zero_counts[j]].RunClacOut.MItrad) - (outputObjects[count].RunClacOut.MItrad))
                 growths.append(outputObjects[count].RunClacOut.growth)
 
-    """""
+
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
     # Plot the data points as scatter plot
-    ax.scatter(ratioA, ratioAint, MImovesDiff)
+    ax.scatter(ratioA, ratioAint, MImoves)
 
     # Create a surface from the data points
-    surf = ax.plot_trisurf(ratioA, ratioAint, MImovesDiff, cmap='viridis', edgecolor='none')
+    surf = ax.plot_trisurf(ratioA, ratioAint, MImoves, cmap='viridis', edgecolor='none')
 
     # Add a color bar to the plot
     fig.colorbar(surf)
@@ -454,7 +544,7 @@ def createFigureGrowthMISyntactic(config, outputObjects):
     # Show the plot
     plt.show()
     l.exit()
-    """""
+
 
     rects = colors.drawRectangles(100, colors_4D)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))

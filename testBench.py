@@ -15,6 +15,7 @@ from scipy import special
 import matplotlib.pyplot as plt
 import numpy as np
 import colors
+import random
 import log
 
 l = log.log()
@@ -64,6 +65,14 @@ def main():
             l.log(runNames)
             return
 
+    output_files = utils.loadPlain(c.runStats.saveDir + "/" + date + "/" + runName + "/OutputProfiles/outputProfilePaths.txt")
+    for i in range(len(output_files)):
+        file = (c.runStats.saveDir + '/' + output_files[i]).strip()
+        output_files[i] = file
+        o = output.output()
+        o.read(file)
+        output_objects.append(o)
+
     if calculateResults:
         #if not newRun or not runSim:
         output_files = utils.loadPlain(c.runStats.saveDir + "/" + date + "/" + runName + "/OutputProfiles/outputProfilePaths.txt")
@@ -74,7 +83,7 @@ def main():
             o.read(file)
             output_objects.append(o)
         l.log("Calculating Results on Parameters run")
-        calcParamDict = {0 : 'Traditional MI Calculation', 1 : 'New Syntactic Caclulation', 2 : 'New Useful Calculation', 3: 'New Useful Input Calculation', 4 :  'Growth Calculation', 5 : 'New Internal Weighted Calculation'}
+        calcParamDict = {0 : 'Traditional MI Calculation', 1 : 'New Syntactic Caclulation', 2 : 'New Useful Calculation', 3: 'New Useful Input Calculation', 4 :  'Growth Calculation', 5 : 'New Internal Weighted Calculation', 6: 'Dynamic Weight'}
         ret = 'Starting: '
         for i in range(len(calculation_parameters)):
             if calculation_parameters[i]:
@@ -83,7 +92,7 @@ def main():
         bins = 30
         for i, out in enumerate(output_objects):
             l.log("calculating...")
-            out.calculateMeasures(c, bins, MItradFlag = calculation_parameters[0], MI2D2DFlag = calculation_parameters[1], MI2D1DFlag = calculation_parameters[2], MI2D1DinFlag = calculation_parameters[3], growthFlag = calculation_parameters[4], intweightMImoveFlag = calculation_parameters[5], path = c.runStats.saveDir)
+            out.calculateMeasures(c, bins, MItradFlag = calculation_parameters[0], MI2D2DFlag = calculation_parameters[1], MI2D1DFlag = calculation_parameters[2], MI2D1DinFlag = calculation_parameters[3], growthFlag = calculation_parameters[4], intweightMImoveFlag = calculation_parameters[5], ABintdynamicWeightFlag = calculation_parameters[6], path = c.runStats.saveDir)
             l.log(out.write(output_files[i], absolute=True))
 
     if analyzeResults:
@@ -159,7 +168,7 @@ def createNewConfig(configName):
     # set config flag to save results
     c.runOutputFlags.save = True
     # set simulation time length
-    c.simParams.simLength = 20
+    c.simParams.simLength = 10
     # set save compression
     c.runOutputFlags.compressSave = True
     # set simulation time step
@@ -172,8 +181,8 @@ def createNewConfig(configName):
     # set Cell strategy
     c.cellMetaStats.decisiontype = "non"
 
-    c.simParams.highSpace = 2000
-    c.simParams.lowSpace = 1000
+    c.simParams.highSpace = 200
+    c.simParams.lowSpace = 100
 
     # set meta simulation parameters
     c.runStats.runStress = False
@@ -202,12 +211,12 @@ def createNewConfig(configName):
     # set simulation meta parameters
     c.runStats.stressArray = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     #c.runStats.cellRatioAEmphasis = [-50, -40, -30, -20, -10, -5, -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1,1.5, 2, 2.5, 3, 3.5, 4, 5, 10, 20, 30, 40, 50]
-    #c.runStats.cellRatioAEmphasis = [-21,-19, -17, -15, -13, -11,-9, -7, 7, 9, 11, 13, 15, 17, 19, 21]
-    c.runStats.cellRatioAEmphasis = [-11,-9, -7]
+    c.runStats.cellRatioAEmphasis = [-50,-40, -30, -20, -10, -5, -2, -1, 0, 1,2,5, 10, 20, 30, 40, 50]
+    #c.runStats.cellRatioAEmphasis = [-11,-9, -7]
     #c.runStats.cellRatioAIntEmphasis = [-50, -40, -30, -20, -10, -5, -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1,1.5, 2, 2.5, 3, 3.5, 4, 5, 10, 20, 30, 40, 50]
-    #c.runStats.cellRatioAIntEmphasis = [-21,-19, -17, -15, -13, -11,-9, -7, 7, 9, 11, 13, 15, 17, 19, 21]
-    c.runStats.cellRatioAIntEmphasis = [-11,-9, -7]
-    c.runStats.enviornmentArray = ["vonMises"]
+    c.runStats.cellRatioAIntEmphasis = [-50,-40, -30, -20, -10, -5, -2, -1, 0, 1,2,5, 10, 20, 30, 40, 50]
+    #c.runStats.cellRatioAIntEmphasis = [-11,-9, -7]
+    c.runStats.enviornmentArray = ["manaFromHeaven"]
     c.runStats.cellStrategiesArray = ["ratio"]
     path = 'Configs/'+configName
     c.writeConfig(path)

@@ -50,7 +50,7 @@ class output(object):
     def refactorfile(self, file1, path):
         return path + '/' + file1
 
-    def calculateMeasures(self, config, bins, path, MItradFlag = True, MI2D2DFlag = True, MI2D1DFlag = True, MI2D1DinFlag = True, growthFlag = True, intweightMImoveFlag = True):
+    def calculateMeasures(self, config, bins, path, MItradFlag = True, MI2D2DFlag = True, MI2D1DFlag = True, MI2D1DinFlag = True, growthFlag = True, intweightMImoveFlag = True, ABintdynamicWeightFlag = True):
         try:
             internalABFileRef = self.refactorfile(self.PrimitiveOutput.internalABFile, path)
             totalConcsFileRef = self.refactorfile(self.PrimitiveOutput.totalConcsFile, path)
@@ -58,7 +58,7 @@ class output(object):
             boundReceptorsFileRef = self.refactorfile(self.PrimitiveOutput.boundReceptorsFile, path)
             totalcellsFileRef = self.refactorfile(self.PrimitiveOutput.totalcellsFile, path)
 
-            MITrad, MI2D2D, MImove, growth, intweightMImove = outputAnalysis.CalcData(config, bins, MITradFlag = MItradFlag, MI2d2dFlag = MI2D2DFlag, MIMoveFlag = MI2D1DFlag, growthFlag = growthFlag, intWeightFlag = intweightMImoveFlag, intABFile = internalABFileRef, extABFile = totalConcsFileRef, moveFile = cellMovementFileRef, boundFile = boundReceptorsFileRef, totalCellsFile =totalcellsFileRef)
+            MITrad, MI2D2D, MImove, growth, intweightMImove = outputAnalysis.CalcData(config, bins, MITradFlag = MItradFlag, MI2d2dFlag = MI2D2DFlag, MIMoveFlag = MI2D1DFlag, growthFlag = growthFlag, intWeightFlag = intweightMImoveFlag, ABintdynamicWeightFlag = ABintdynamicWeightFlag, intABFile = internalABFileRef, extABFile = totalConcsFileRef, moveFile = cellMovementFileRef, boundFile = boundReceptorsFileRef, totalCellsFile =totalcellsFileRef)
             #TODO fix below and in write (object should be lower case to use the constructor, but this will break below)
             if MItradFlag:
                 self.RunClacOut.MItrad = MITrad
