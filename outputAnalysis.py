@@ -212,6 +212,7 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     MITrad = None
     MImove = None
     intweightMIMove = None
+    weightedMIind = None
     growth = None
 
     k = 1
@@ -271,10 +272,10 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
         moves = [move_arr]
         inters = [intAall, intBall]
         weightedMI, binMI = MIMoveWeighted(concs, moves, inters, 30, 20)
-        return weightedMI
+        weightedMIind = weightedMI
 
 
-    return MITrad, MI2D2D, MImove, growth, intweightMIMove
+    return MITrad, MI2D2D, MImove, growth, intweightMIMove, weightedMIind
 
 def getCalcArray(config, run, date, stresses, strats, enviorns, bins):
     MI_tradAll = []
@@ -565,7 +566,7 @@ def createFigureGrowthMISyntactic(config, outputObjects):
 
     rects = colors.drawRectangles(100, colors_4D)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
-    ax1.scatter(MIsDiff, growths, color=colors_plot1, zorder=3)
+    ax1.scatter(MIs, growths, color=colors_plot1, zorder=3)
     # plt.scatter(2, 2, color = 'Blue', label = "Strategy Sigmoid Coefficient")
     # plt.scatter(2, 2, color = 'Red', label = "Receptor Allocation Sigmoid Coefficient")
     ax1.set_xlabel("Subjective Information")
