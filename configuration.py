@@ -36,6 +36,8 @@ class configuration(object):
             self.presetB_time = []
             self.presetA_loc = []
             self.presetB_loc = []
+            self.AconcFile = 'None'
+            self.BconcFile = 'None'
             self.presetSave = False
             self.presetBool = False
             self.uniformConcStart = False
@@ -318,7 +320,9 @@ class configuration(object):
                                    'aknoght': self.simParams.aknoght,
                                    'presetSave': self.simParams.presetSave,
                                    'highSpace': self.simParams.highSpace,
-                                   'lowSpace': self.simParams.lowSpace
+                                   'lowSpace': self.simParams.lowSpace,
+                                   'AconcFile': self.simParams.AconcFile,
+                                   'BconcFile': self.simParams.BconcFile
 
                                }
 

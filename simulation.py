@@ -645,13 +645,13 @@ class simulation(object):
                     self.SimEnviornment.addAB(self.concentrationMag, self.locationA, self.locationB)
 
     def test(self, config, run, date):
-        lam = config.simParams.lam
-        gamma = config.simParams.gamma
-        Aknoght = config.simParams.aknoght
+        #lam = config.simParams.lam
+        #gamma = config.simParams.gamma
+        #Aknoght = config.simParams.aknoght
 
         totalCells = []
         multiple = 1
-        muadj = self.SimEnviornment.timeStep * lam
+        #muadj = self.SimEnviornment.timeStep * lam
 
         cellLocations = []
         internalAB = []
@@ -665,13 +665,25 @@ class simulation(object):
         for i in range(10):
             all_Aratios.append([])
 
+        presetAconcs = []
+        presetBconcs = []
+
+        if config.concParams.concProfile == "manaFromHeaven":
+            concs = utils.loadData(config.simParams.AconcFile)
+            presetAconcs = concs[0]
+            presetBconcs = concs[1]
+
         for i in range(math.ceil(self.SimLength*(1/self.SimEnviornment.timeStep))):
             if i%((1/self.SimEnviornment.timeStep)*10) == 0:
                 l.log("time: " + str(i*self.SimEnviornment.timeStep))
             self.SimEnviornment.runCells()
 
             if config.concParams.concProfile == "manaFromHeaven":
+
+                self.SimEnviornment.Aconcentrations = presetAconcs[i]
+                self.SimEnviornment.Bconcentrations = presetBconcs[i]
                 # run mana from heaven
+                """""
                 if not config.simParams.presetBool:
                     rand1 = random.uniform(0, 1)
                     rand2 = random.uniform(0, 1)
@@ -700,6 +712,7 @@ class simulation(object):
                     self.SimEnviornment.Aconcentrations[j] = self.SimEnviornment.Aconcentrations[j]*(1-degradeCoe)
                     self.SimEnviornment.Bconcentrations[j] = self.SimEnviornment.Bconcentrations[j]*(1-degradeCoe)
                 self.SimEnviornment.runConcentrationAdjusted()
+                """""
 
             if config.outputFlags.concProfile:
                 enviornmentConcs.append([])

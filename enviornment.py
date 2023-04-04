@@ -330,16 +330,6 @@ class enviornment(object):
         newAcon = []
         newBcon = []
         for i in range(len(self.Aconcentrations)):
-            #if i == 0:
-            #    newAcon.append(self.Aconcentrations[i] + (difusionCo *(self.Aconcentrations[i + 1] - self.Aconcentrations[i])))
-            #    newBcon.append(self.Bconcentrations[i] + (difusionCo *(self.Bconcentrations[i + 1] - self.Bconcentrations[i])))
-            #    continue
-            #elif i == len(self.Aconcentrations) - 1:
-            #    newAcon.append(self.Aconcentrations[i] + (difusionCo *
-            #                                              (self.Aconcentrations[i - 1] - self.Aconcentrations[i])))
-            #    newBcon.append(self.Bconcentrations[i] + (difusionCo *
-            #                                              (self.Bconcentrations[i - 1] - self.Bconcentrations[i])))
-            #    continue
             prev = i-1
             curr = i
             next = i+1
@@ -356,17 +346,9 @@ class enviornment(object):
         self.Bconcentrations = newBcon
 
     def runConcentrationAdjusted(self):
-        #TimesRun = math.ceil(self.Adiffusion/self.locationStep)
         adjustedAdiffusion = (self.Adiffusion/(self.locationStep*self.locationStep)) * self.timeStep
-        #print(self.Adiffusion)
-        #print()
-        #print("adjusted ")
-        #print(adjustedAdiffusion)
-        #TimesRun = math.ceil(self.Adiffusion / self.locationStep)
         TimesRun = math.floor(adjustedAdiffusion/0.1)
         for i in range(TimesRun):
-            #plt.plot(self.Aconcentrations)
-            #plt.show()
             self.runConcentration(adjustedAdiffusion/TimesRun)
 
     def toString(self):
@@ -561,7 +543,7 @@ class enviornment(object):
         for pos in self.positionHash:
             for i in range(len(self.positionHash[pos])):
                 cell = self.positionHash[pos][i]
-                cell.Amol + cell.ATP, cell.Bmol + cell.ATP, self.Aconcentrations[pos], self.Bconcentrations[pos]
+                #cell.Amol + cell.ATP, cell.Bmol + cell.ATP, self.Aconcentrations[pos], self.Bconcentrations[pos]
                 Amol1.append(cell.Amol+cell.ATP)
                 Bmol1.append(cell.Bmol+cell.ATP)
                 Aconc.append(self.Aconcentrations[pos])

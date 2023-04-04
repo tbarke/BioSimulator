@@ -28,13 +28,14 @@ class output(object):
             self.SIAsEntropyFile = SIAsEntropyFile
 
     class RunClacOut:
-        def __init__(self, MItrad = None, MI2D2D = None, MI2D1D = None, MI2D1Din = None, growth = None, intweightMImove = None):
+        def __init__(self, MItrad = None, MI2D2D = None, MI2D1D = None, MI2D1Din = None, growth = None, intweightMImove = None, intabweightind = None):
             self.MItrad = MItrad
             self.MI2D2D = MI2D2D
             self.MI2D1D = MI2D1D
             self.MI2D1Din = MI2D1Din
             self.growth = growth
             self.intweightMImove = intweightMImove
+            self.intabweightind = intabweightind
 
     def __init__(self, configFile = None, runName = None, totalcellsFile = None, totalReceptorsFile = None, boundReceptorsFile = None, internalABFile = None, totalConcsFile = None, cellLocationsFile = None, cellMovementFile = None, enviornmentConcsFile = None, totalMIFile = None, averageMIFile = None, compositeMIFile = None, weightedMIFile = None, averageGrowthFile = None, SIAsVarFile = None, SIAsEntropyFile = None):
         if runName:
