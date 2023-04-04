@@ -28,13 +28,14 @@ class output(object):
             self.SIAsEntropyFile = SIAsEntropyFile
 
     class RunClacOut:
-        def __init__(self, MItrad = None, MI2D2D = None, MI2D1D = None, MI2D1Din = None, growth = None, intweightMImove = None):
+        def __init__(self, MItrad = None, MI2D2D = None, MI2D1D = None, MI2D1Din = None, growth = None, intweightMImove = None,intABWeightind = None ):
             self.MItrad = MItrad
             self.MI2D2D = MI2D2D
             self.MI2D1D = MI2D1D
             self.MI2D1Din = MI2D1Din
             self.growth = growth
             self.intweightMImove = intweightMImove
+            self.intABWeightind = intABWeightind
 
     def __init__(self, configFile = None, runName = None, totalcellsFile = None, totalReceptorsFile = None, boundReceptorsFile = None, internalABFile = None, totalConcsFile = None, cellLocationsFile = None, cellMovementFile = None, enviornmentConcsFile = None, totalMIFile = None, averageMIFile = None, compositeMIFile = None, weightedMIFile = None, averageGrowthFile = None, SIAsVarFile = None, SIAsEntropyFile = None):
         if runName:
@@ -58,7 +59,7 @@ class output(object):
             boundReceptorsFileRef = self.refactorfile(self.PrimitiveOutput.boundReceptorsFile, path)
             totalcellsFileRef = self.refactorfile(self.PrimitiveOutput.totalcellsFile, path)
 
-            MITrad, MI2D2D, MImove, growth, intweightMImove = outputAnalysis.CalcData(config, bins, MITradFlag = MItradFlag, MI2d2dFlag = MI2D2DFlag, MIMoveFlag = MI2D1DFlag, growthFlag = growthFlag, intWeightFlag = intweightMImoveFlag, ABintdynamicWeightFlag = ABintdynamicWeightFlag, intABFile = internalABFileRef, extABFile = totalConcsFileRef, moveFile = cellMovementFileRef, boundFile = boundReceptorsFileRef, totalCellsFile =totalcellsFileRef)
+            MITrad, MI2D2D, MImove, growth, intweightMImove, intABWeightind = outputAnalysis.CalcData(config, bins, MITradFlag = MItradFlag, MI2d2dFlag = MI2D2DFlag, MIMoveFlag = MI2D1DFlag, growthFlag = growthFlag, intWeightFlag = intweightMImoveFlag, ABintdynamicWeightFlag = ABintdynamicWeightFlag, intABFile = internalABFileRef, extABFile = totalConcsFileRef, moveFile = cellMovementFileRef, boundFile = boundReceptorsFileRef, totalCellsFile =totalcellsFileRef)
             #TODO fix below and in write (object should be lower case to use the constructor, but this will break below)
             if MItradFlag:
                 self.RunClacOut.MItrad = MITrad
@@ -74,6 +75,8 @@ class output(object):
                 self.RunClacOut.growth = growth
             if intweightMImoveFlag:
                 self.RunClacOut.intweightMImove = intweightMImove
+            if ABintdynamicWeightFlag:
+                self.RunClacOut.intABWeightind = intABWeightind
         except Exception as e:
             l.handleException(e)
 

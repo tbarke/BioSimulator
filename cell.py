@@ -105,9 +105,13 @@ class cell(object):
             allBoundRL = (math.fabs(self.rightBoundBrec - self.leftBoundBrec) + math.fabs(self.rightBoundArec - self.leftBoundArec))
             BboundRatio = 0
             AboundRatio = 0
-            if allBoundRL > 0:
-                BboundRatio = (self.rightBoundBrec - self.leftBoundBrec)/allBoundRL
-                AboundRatio = (self.rightBoundArec - self.leftBoundArec)/allBoundRL
+            if self.Brec > 0:
+                BboundRatio = (self.rightBoundBrec - self.leftBoundBrec)/(self.Brec/2)
+            if self.Arec > 0:
+                AboundRatio = (self.rightBoundArec - self.leftBoundArec)/(self.Arec/2)
+            #else:
+            #    return 0
+            #print(((BboundRatio*sigmoid_ratio) + (AboundRatio*(1-sigmoid_ratio))))
             vel = 20 * ((BboundRatio*sigmoid_ratio) + (AboundRatio*(1-sigmoid_ratio)))
         #rightBound = utils.calculateBoundKinetic(rightBrec+rightArec, BconRight+AconRight, dissocociation, self.newRand, self.noise, self.receptor_mode)
         #leftBound = utils.calculateBoundKinetic(leftBrec+leftArec, BconLeft+AconLeft, dissocociation, self.newRand, self.noise, self.receptor_mode)
