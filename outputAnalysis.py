@@ -462,10 +462,13 @@ def createFigureGrowthMISyntactic(config, outputObjects):
     MIs = []
     MITrad = []
     growths = []
+    MIWeightind = []
+    MIWeight = []
     count = -1
     ratioA = []
     ratioAint = []
     MImovesDiff = []
+    MIWeightedindDiff = []
     MIsDiff = []
     zero_counts = []
     MI_tradDiff = []
@@ -483,10 +486,19 @@ def createFigureGrowthMISyntactic(config, outputObjects):
                 zero_counts.append(zero_count)
     for i in range(len(config.runStats.cellRatioAEmphasis)):
         for j in range(len(config.runStats.cellRatioAIntEmphasis)):
+            print(config.runStats.cellRatioAEmphasis[i])
+            print(config.runStats.cellRatioAIntEmphasis[j])
+            print(outputObjects[count].PrimitiveOutput.totalcellsFile)
+            print()
             # print("here" + str(output_objects[count].RunClacOut.MI2D2D))
             count += 1
-            if outputObjects[
-                count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
+            if outputObjects[count].RunClacOut.MI2D2D != '':# and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
+            #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
+            #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] <= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
+            #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] <= 0:
+            #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] <= 0 and config.runStats.cellRatioAIntEmphasis[j] <= 0:
+            #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAIntEmphasis[j] <= 0:
+            #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0:
                 # if c.runStats.cellRatioAEmphasis[i] != 0:
                 #    colors_plot.append([1,0,0])
                 # else:
@@ -505,11 +517,11 @@ def createFigureGrowthMISyntactic(config, outputObjects):
 
                 #mimovezero1 = float(outputObjects[zero_counts[j]].RunClacOut.MI2D1D.split(',')[0][1:].strip())
                 #mimovezero2 = float(outputObjects[zero_counts[j]].RunClacOut.MI2D1D.split(',')[3][1:].strip())
-                #mimove_zero = outputObjects[zero_counts[j]].RunClacOut.MI2D1D
+                mimove_zero = outputObjects[zero_counts[j]].RunClacOut.MI2D1D
                 # MImoves.append(output_objects[count].RunClacOut.MI2D1D)
                 MImoves.append(mimove_count)
                 # MImovesDiff.append(output_objects[count].RunClacOut.MI2D1D - output_objects[zero_counts[j]].RunClacOut.MI2D1D)
-                #MImovesDiff.append(mimove_count - mimove_zero)
+                MImovesDiff.append(mimove_count - mimove_zero)
 
                 #num_zero1 = float(outputObjects[zero_counts[j]].RunClacOut.MI2D2D.split(',')[0][1:].strip())
                 #num_zero2 = float(outputObjects[zero_counts[j]].RunClacOut.MI2D2D.split(',')[3][1:].strip())
@@ -517,22 +529,26 @@ def createFigureGrowthMISyntactic(config, outputObjects):
                 #num1 = float(outputObjects[count].RunClacOut.MI2D2D.split(',')[0][1:].strip())
                 #num2 = float(outputObjects[count].RunClacOut.MI2D2D.split(',')[3][1:].strip())
                 mi2d2d_count = outputObjects[count].RunClacOut.MI2D2D
+                MI2d2d_zero = outputObjects[zero_counts[j]].RunClacOut.MI2D2D
                 # print(num)
                 MIs.append(mi2d2d_count)
-                #MIsDiff.append(mi2d2d_count - MI2d2d_zero)
+                MIsDiff.append(mi2d2d_count - MI2d2d_zero)
                 MITrad.append(outputObjects[count].RunClacOut.MItrad)
                 #MI_tradDiff.append((outputObjects[zero_counts[j]].RunClacOut.MItrad) - (outputObjects[count].RunClacOut.MItrad))
                 growths.append(outputObjects[count].RunClacOut.growth)
+                MIWeightind.append(outputObjects[count].RunClacOut.intabweightind)
+                MIWeightedindDiff.append(outputObjects[count].RunClacOut.intabweightind - outputObjects[zero_counts[j]].RunClacOut.intabweightind)
+                MIWeight.append(outputObjects[count].RunClacOut.intweightMImove)
 
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
     # Plot the data points as scatter plot
-    ax.scatter(ratioA, ratioAint, MImoves)
+    ax.scatter(ratioA, ratioAint, growths)
 
     # Create a surface from the data points
-    surf = ax.plot_trisurf(ratioA, ratioAint, MImoves, cmap='viridis', edgecolor='none')
+    surf = ax.plot_trisurf(ratioA, ratioAint, growths, cmap='viridis', edgecolor='none')
 
     # Add a color bar to the plot
     fig.colorbar(surf)
@@ -547,13 +563,14 @@ def createFigureGrowthMISyntactic(config, outputObjects):
     l.exit()
 
 
+
     rects = colors.drawRectangles(100, colors_4D)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     ax1.scatter(MIs, growths, color=colors_plot1, zorder=3)
     # plt.scatter(2, 2, color = 'Blue', label = "Strategy Sigmoid Coefficient")
     # plt.scatter(2, 2, color = 'Red', label = "Receptor Allocation Sigmoid Coefficient")
-    # ax1.set_xlabel("\'Useful\' Information")
-    ax1.set_xlabel("Syntactic Information")
+    ax1.set_xlabel("Subjective Information")
+    #ax1.set_xlabel("Syntactic Information")
     # plt.xlim([0, 0.6])
     ax1.set_ylabel("Growth")
     # plt.ylim([-.1, .25])
@@ -565,7 +582,9 @@ def createFigureGrowthMISyntactic(config, outputObjects):
 
     ax2.set_xlim(0, 1)
     ax2.set_ylim(0, 1)
+    #ax2.set_xticks([0, 1], [-50, 50])
     ax2.set_xticks([0, 1], [-50, 50])
+    #ax2.set_yticks([0, 1], [-50, 50])
     ax2.set_yticks([0, 1], [-50, 50])
     ax2.set_xlabel("Receptor Allocation Gain")
     ax2.set_ylabel("Strategy Gain")

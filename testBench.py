@@ -22,6 +22,56 @@ l = log.log()
 
 def main():
 
+    def createMFHProfile(c, init):
+        def runConcentrationAdjusted(A, B):
+            adjustedAdiffusion = (c.concParams.diffCoeff / (c.simParams.locationStep * c.simParams.locationStep)) * c.simParams.simTimeStep
+            TimesRun = math.floor(adjustedAdiffusion / 0.1)
+            for i in range(TimesRun):
+                difusionCo = adjustedAdiffusion / TimesRun
+                newAcon = []
+                newBcon = []
+                for i in range(len(A)):
+                    prev = i - 1
+                    curr = i
+                    next = i + 1
+                    if prev == -1:
+                        prev = math.floor(int(c.simParams.length * (1/c.simParams.locationStep))) - 1
+                    if next == math.floor(int(c.simParams.length * (1/c.simParams.locationStep))):
+                        next = 0
+                    newAcon.append(A[i] + (difusionCo * (A[next] - 2 * A[curr] + A[prev])))
+                    newBcon.append(B[i] + (difusionCo * (B[next] - 2 * B[curr] + B[prev])))
+
+                A = newAcon
+                B = newBcon
+            return A, B
+        A = utils.list_empty([int(c.simParams.length * (1/c.simParams.locationStep))], init)
+        B = utils.list_empty([int(c.simParams.length * (1/c.simParams.locationStep))], init)
+        As = []
+        Bs = []
+        lam = c.simParams.lam
+        gamma = c.simParams.gamma
+        Aknoght = c.simParams.aknoght
+        muadj = c.simParams.simTimeStep * lam
+        for i in range(math.ceil(c.simParams.simLength*(1/c.simParams.simTimeStep))):
+            rand1 = random.uniform(0, 1)
+            rand2 = random.uniform(0, 1)
+            if rand1 < muadj:
+                locationA = random.randint(0, int(c.simParams.length * (1/c.simParams.locationStep))-1)
+                A[locationA] += Aknoght / c.simParams.locationStep
+            if rand2 < muadj:
+                locationB = random.randint(0, int(c.simParams.length * (1/c.simParams.locationStep))-1)
+                A[locationB] += Aknoght / c.simParams.locationStep
+            degradeCoe = gamma * c.simParams.simTimeStep
+            for j in range(len(A)):
+                A[j] = A[j]*(1-degradeCoe)
+                B[j] = B[j]*(1-degradeCoe)
+            A,B = runConcentrationAdjusted(A,B)
+
+            As.append(A)
+            Bs.append(B)
+        return As, Bs
+
+
     meta = utils.loadMetaData()
     givenRunName = meta["givenRunName"]
     runSim = meta["runSim"]
@@ -32,6 +82,8 @@ def main():
     calculateResults = meta["calculateResults"]
     calculation_parameters = meta["calculation_parameters"]
     config_file = meta["config_file"]
+    mfhprofile = meta['mfhConcProfile']
+    mfhConcFlag = meta['mfhConcFlag']
 
     l.log("Run Name: " + givenRunName + " Date: " + givenDate)
     if runSim:
@@ -40,10 +92,18 @@ def main():
         l.log('Analyzing '+ '\'' + givenRunName+ '\'')
     if calculateResults:
         l.log('Calculating Results '+ '\'' + givenRunName+ '\'')
+    if mfhConcFlag:
+        l.log('Generating New MFH Concentration Profile')
 
     c = configuration.configuration()
     c.readConfig(config_file)
     c.runStats.saveDir = meta['path']
+
+    if mfhConcFlag:
+        As, Bs = createMFHProfile(c, c.concParams.constantConc)
+        mfhconcFile = utils.saveData(c.runStats.saveDir, [As,Bs], 'mfhProfiles/' +mfhprofile)
+        c.simParams.AconcFile = mfhconcFile
+        c.simParams.BconcFile = mfhconcFile
 
     # give run name
     runName = givenRunName
@@ -64,6 +124,17 @@ def main():
             l.log("Here are some Runs found on the System: ")
             l.log(runNames)
             return
+
+    output_files = utils.loadPlain(c.runStats.saveDir + "/" + date + "/" + runName + "/OutputProfiles/outputProfilePaths.txt")
+    output_objects = []
+    for i in range(len(output_files)):
+        file = (c.runStats.saveDir + '/' + output_files[i]).strip()
+        output_files[i] = file
+        o = output.output()
+        o.read(file)
+        output_objects.append(o)
+
+    l.log("Output Objects Imported")
 
     output_files = utils.loadPlain(c.runStats.saveDir + "/" + date + "/" + runName + "/OutputProfiles/outputProfilePaths.txt")
     for i in range(len(output_files)):
@@ -181,13 +252,13 @@ def createNewConfig(configName):
     # set Cell strategy
     c.cellMetaStats.decisiontype = "non"
 
-    c.simParams.highSpace = 200
-    c.simParams.lowSpace = 100
+    c.simParams.highSpace = 2000
+    c.simParams.lowSpace = 1000
 
     # set meta simulation parameters
     c.runStats.runStress = False
     c.runStats.cellStrategiesArrayFlag = True
-    c.runStats.enviornmentArrayFlag = False
+    c.runStats.enviornmentArrayFlag = True
     c.runStats.cellRatioAEmphasisFlag = True
     c.runStats.cellRatioAIntEmphasisFlag = True
     # TODO: implement below
