@@ -26,12 +26,11 @@ def calcGrowth(file, config):
     avg_growth = (avg_growth / len(growth)) * (1 / config.simParams.simTimeStep)
     return avg_growth
 
-def MIMoveWeighted(concs, moves, inters, binsMI, binsintAB, oneD):
+def MIMoveWeighted(concs, moves, inters, binsMI, binsintAB):
     # list of concs: AR, AL, BR, BL
     # list of moves: absolute velocity
     # list of internal states intA, intB
     # find max intA and intA
-    print(len(moves[0]))
 
     def findMI(indexes):
         currConcsAR = []
@@ -52,42 +51,24 @@ def MIMoveWeighted(concs, moves, inters, binsMI, binsintAB, oneD):
 
 
     def findBins(intA, intB):
-        if not oneD:
-            maxintA = max(intA)
-            maxintB = max(intB)
-            minintA = min(intA)
-            minintB = min(intB)
-            binWidthA = (maxintA-minintA)/binsintAB
-            binWidthB = (maxintB-minintB)/binsintAB
-            binedgesA = utils.list_empty([binsintAB+1], 0)
-            binedgesB = utils.list_empty([binsintAB+1], 0)
-            binAB = utils.list_empty([binsintAB, binsintAB], [])
-            for i in range(binsintAB+1):
-                binedgesA[i] = minintA + binWidthA * i
-                binedgesB[i] = minintB + binWidthB * i
-            binedgesA[0] = binedgesA[0] - 0.01
-            binedgesB[0] = binedgesB[0] - 0.01
+        maxintA = max(intA)
+        maxintB = max(intB)
+        minintA = min(intA)
+        minintB = min(intB)
+        binWidthA = (maxintA-minintA)/binsintAB
+        binWidthB = (maxintB-minintB)/binsintAB
+        binedgesA = utils.list_empty([binsintAB+1], 0)
+        binedgesB = utils.list_empty([binsintAB+1], 0)
+        binAB = utils.list_empty([binsintAB, binsintAB], [])
+        for i in range(binsintAB+1):
+            binedgesA[i] = minintA + binWidthA * i
+            binedgesB[i] = minintB + binWidthB * i
+        binedgesA[0] = binedgesA[0] - 0.01
+        binedgesB[0] = binedgesB[0] - 0.01
 
-            binedgesA[binsintAB] = binedgesA[binsintAB] + 0.01
-            binedgesB[binsintAB] = binedgesB[binsintAB] + 0.01
-            return binedgesA, binedgesB, binAB
-        else:
-            intRatio = []
-            for i in range(len(intA)):
-                if intA[i] + intB[i] >0:
-                    intRatio.append(intA[i]/(intA[i] + intB[i]))
-                else:
-                    intRatio.append(0.0)
-            maxintABrat = max(intRatio)
-            minintABrat = min(intRatio)
-            binWidthArat = (maxintABrat - minintABrat) / binsintAB
-            binedgesArat = utils.list_empty([binsintAB + 1], 0)
-            binAB = utils.list_empty([binsintAB], [])
-            for i in range(binsintAB+1):
-                binedgesArat[i] = minintABrat + binWidthArat * i
-            binedgesArat[0] = binedgesArat[0] - 0.01
-            binedgesArat[binsintAB] = binedgesArat[binsintAB] + 0.01
-            return binedgesArat, binedgesArat, binAB
+        binedgesA[binsintAB] = binedgesA[binsintAB] + 0.01
+        binedgesB[binsintAB] = binedgesB[binsintAB] + 0.01
+        return binedgesA, binedgesB, binAB
 
     # divide into total bins used
     binedgeA, binedgeB, binAB = findBins(inters[0], inters[1])
@@ -95,52 +76,26 @@ def MIMoveWeighted(concs, moves, inters, binsMI, binsintAB, oneD):
     #print(binedgeB)
 
     def findBin(intA, intB):
-        if not oneD:
-            for i in range(len(binedgeA)):
-                if intA >= binedgeA[i] and intA < binedgeA[i + 1]:
-                    for j in range(len(binedgeA)):
-                        if intB >= binedgeB[j] and intB < binedgeB[j +1]:
-                            return i, j
-        else:
-            if (intA+intB) > 0:
-                intRat = intA/(intA+intB)
-            else:
-                intRat = 0.0
-            for i in range(len(binedgeA)):
-                if intRat >= binedgeA[i] and intRat < binedgeA[i+1]:
-                    return i, i
+        for i in range(len(binedgeA)):
+            if intA >= binedgeA[i] and intA < binedgeA[i + 1]:
+                for j in range(len(binedgeA)):
+                    if intB >= binedgeB[j] and intB < binedgeB[j +1]:
+                        return i, j
 
     for i in range(len(inters[0])):
         curr_intA = inters[0][i]
         curr_intB = inters[1][i]
         indexA, indexB = findBin(curr_intA, curr_intB)
-        if not oneD:
-            binAB[indexA][indexB].append(i)
-        else:
-            binAB[indexA].append(i)
+        binAB[indexA][indexB].append(i)
 
-    if not oneD:
-        binProbs = utils.list_empty([binsintAB, binsintAB], 0)
-    else:
-        binProbs = utils.list_empty([binsintAB], 0)
+    binProbs = utils.list_empty([binsintAB, binsintAB], 0)
     for i in range(len(binAB)):
-        if oneD:
-            binProbs[i] = len(binAB[i])/len(moves[0])
-            continue
         for j in range(len(binAB[0])):
             binProbs[i][j] = len(binAB[i][j])/len(moves[0])
 
     MIweight = 0
-    if not oneD:
-        binABind = utils.list_empty([binsintAB, binsintAB], [])
-    else:
-        binABind = utils.list_empty([binsintAB], [])
+    binABind = utils.list_empty([binsintAB, binsintAB], [])
     for i in range(len(binAB)):
-        if oneD:
-            currMIA, currMIB = findMI(binAB[i])
-            binABind[i] = [currMIA, currMIB]
-            MIweight += (currMIA + currMIB) * binProbs[i]
-            continue
         for j in range(len(binAB[0])):
             currMIA, currMIB = findMI(binAB[i][j])
             binABind[i][j] = [currMIA, currMIB]
@@ -162,21 +117,20 @@ def MI_trad(ext, bound, k, bins):
     MI = MI_obj.AltMI(dataX, dataY, bins)[0]
     return MI
 
-def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWeightFlag, ABintdynamicWeightFlag, intABFile = None, extABFile = None, moveFile = None, boundFile = None, totalCellsFile = None, recsFile = None):
+def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWeightFlag, ABintdynamicWeightFlag, intABFile = None, extABFile = None, moveFile = None, boundFile = None, totalCellsFile = None):
     extAB = None
     move = None
     boundAB = None
     intAB = None
-    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
+    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag:
         extAB = utils.loadDataDate(extABFile, False)
-    if MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
+    if MIMoveFlag or intWeightFlag:
         move = utils.loadDataDate(moveFile, False)
-    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
+    if MITradFlag or MI2d2dFlag or MIMoveFlag:
         boundAB = utils.loadDataDate(boundFile, False)
 
-    if intWeightFlag or ABintdynamicWeightFlag:
+    if intWeightFlag:
         intAB = utils.loadDataDate(intABFile, False)
-        recs = utils.loadDataDate(recsFile, False)
 
     ext_A = []
     ext_B = []
@@ -209,19 +163,16 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     intAall =[]
     intBall = []
 
-    Arecs = []
-    Brecs = []
-
-    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
+    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag:
         for i in range(len(extAB[0])):
             for j in range(len(extAB[0][i])):
                 count += 1
-                if MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
+                if MIMoveFlag:
                     move_arr.append(move[0][i][j])
-                if MI2d2dFlag or MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
+                if MI2d2dFlag or MIMoveFlag:
                     ext_A.append(extAB[0][i][j][1] - extAB[0][i][j][0])
                     ext_B.append(extAB[0][i][j][3] - extAB[0][i][j][2])
-                if MI2d2dFlag or intWeightFlag or ABintdynamicWeightFlag:
+                if MI2d2dFlag:
                     boundAB_all = math.fabs(boundAB[0][i][j][1] - boundAB[0][i][j][0]) + math.fabs(boundAB[0][i][j][3] - boundAB[0][i][j][2])
                     if boundAB_all > 0:
                         boundA.append((boundAB[0][i][j][1] - boundAB[0][i][j][0])/boundAB_all)
@@ -230,7 +181,7 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
                         boundA.append(0)
                         boundB.append(0)
 
-                if MITradFlag or MIMoveFlag or MI2d2dFlag or intWeightFlag or ABintdynamicWeightFlag:
+                if MITradFlag or MIMoveFlag or MI2d2dFlag:
                     extAL.append(extAB[0][i][j][0])
                     extAR.append(extAB[0][i][j][1])
                     #------------bound A------------
@@ -242,15 +193,11 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
                     # ------------bound A------------
                     boundBL.append(boundAB[0][i][j][2])
                     boundBR.append(boundAB[0][i][j][3])
-                if intWeightFlag or ABintdynamicWeightFlag:
+                if intWeightFlag:
                     intA_curr = intAB[0][i][j][0]
                     intB_curr = intAB[0][i][j][1]
-                    Arec_curr = recs[0][i][j][0]
-                    Brec_curr = recs[0][i][j][1]
                     intAall.append(intA_curr)
                     intBall.append(intB_curr)
-                    Arecs.append(Arec_curr)
-                    Brecs.append(Brec_curr)
                     if intA_curr > intB_curr:
                         intBextBL.append(extAB[0][i][j][2])
                         intBextBR.append(extAB[0][i][j][3])
@@ -265,12 +212,10 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     MITrad = None
     MImove = None
     intweightMIMove = None
-    weightedMIind = None
     growth = None
 
     k = 1
     if count > 20000:
-        print("this happened")
         k = math.ceil(count / 10000)
 
     def reduce(arr, k):
@@ -278,11 +223,6 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
         for i in range(0, len(arr), k):
             new.append(arr[i])
         return new
-
-    """""
-
-    Arecs = reduce(Arecs, k)
-    Brecs = reduce(Brecs, k)
 
     extAR = reduce(extAR, k)
     extAL = reduce(extAL, k)
@@ -306,7 +246,7 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     intBextBL = reduce(intBextBL, k)
     intBextBR = reduce(intBextBR, k)
     intBMove = reduce(intBMove, k)
-    """""
+
 
     if MITradFlag:
         MITrad = MI_trad([extAL, extAR, extBL, extBR], [boundAL, boundAR, boundBL, boundBR], k, bins)
@@ -316,31 +256,9 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
         MI2D2D2 = utils.MI2D2D(extBR, extBL, boundBR, boundBL, bins)[0]
         MI2D2D = MI2D2D1 + MI2D2D2
     if MIMoveFlag:
-        #TODO fix old MI move code
-        #MImove1 = utils.MI2D1D(extAR, extAL, move_arr, bins)[0]
-        #MImove2 = utils.MI2D1D(extBR, extBL, move_arr, bins)[0]
-        #MImove = MImove1 + MImove2
-        ARboundNorm = []
-        ALboundNorm = []
-        BRboundNorm = []
-        BLboundNorm = []
-        for i in range(len(boundAR)):
-            if Arecs[i] > 0:
-                ARboundNorm.append(boundAR[i]/(Arecs[i]/2))
-                ALboundNorm.append(boundAL[i]/(Arecs[i]/2))
-            else:
-                ARboundNorm.append(0.0)
-                ALboundNorm.append(0.0)
-
-            if Brecs[i] > 0:
-                BRboundNorm.append(boundBR[i] / (Brecs[i] / 2))
-                BLboundNorm.append(boundBL[i] / (Brecs[i] / 2))
-            else:
-                BRboundNorm.append(0.0)
-                BLboundNorm.append(0.0)
-        MIsyntA = utils.MI2D2D(extAR, extAL, ARboundNorm, ALboundNorm, bins)[0]
-        MIsyntB = utils.MI2D2D(extBR, extBL, BRboundNorm, BLboundNorm, bins)[0]
-        MImove = MIsyntA + MIsyntB
+        MImove1 = utils.MI2D1D(extAR, extAL, move_arr, bins)[0]
+        MImove2 = utils.MI2D1D(extBR, extBL, move_arr, bins)[0]
+        MImove = MImove1 + MImove2
     if growthFlag:
         growth = calcGrowth(totalCellsFile, config)
     if intWeightFlag:
@@ -350,15 +268,12 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     if ABintdynamicWeightFlag:
         #concs, moves, inters, binsMI, binsintAB
         concs = [extAR, extAL, extBR, extBL]
-        BoundRecs = [boundAR, boundAL, boundBR, boundBL]
-        recs = [Arecs, Brecs]
         moves = [move_arr]
         inters = [intAall, intBall]
-        weightedMI, binMI = MIMoveWeighted(concs, moves, inters, 30, 10, False)
-        weightedMIind = weightedMI
+        weightedMI, binMI = MIMoveWeighted(concs, moves, inters, 30, 20)
 
 
-    return MITrad, MI2D2D, MImove, growth, intweightMIMove, weightedMIind
+    return MITrad, MI2D2D, MImove, growth, intweightMIMove
 
 def getCalcArray(config, run, date, stresses, strats, enviorns, bins):
     MI_tradAll = []
@@ -569,19 +484,16 @@ def createFigureGrowthMISyntactic(config, outputObjects):
                 zero_counts.append(zero_count)
     for i in range(len(config.runStats.cellRatioAEmphasis)):
         for j in range(len(config.runStats.cellRatioAIntEmphasis)):
-            print(config.runStats.cellRatioAEmphasis[i])
-            print(config.runStats.cellRatioAIntEmphasis[j])
-            print(outputObjects[count].PrimitiveOutput.totalcellsFile)
-            print()
-            # print("here" + str(output_objects[count].RunClacOut.MI2D2D))
             count += 1
-            if outputObjects[count].RunClacOut.MI2D2D != '' and not isinstance(outputObjects[count].RunClacOut.growth, str):# and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
+            # print("here" + str(output_objects[count].RunClacOut.MI2D2D))
+
+            if outputObjects[count].RunClacOut.MI2D2D != '':# and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
             #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
             #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] <= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
             #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] <= 0:
             #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] <= 0 and config.runStats.cellRatioAIntEmphasis[j] <= 0:
             #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAIntEmphasis[j] <= 0:
-            #if outputObjects[count].RunClacOut.MI2D2D != '' and  config.runStats.cellRatioAEmphasis[i] >= 0:
+            #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0:
                 # if c.runStats.cellRatioAEmphasis[i] != 0:
                 #    colors_plot.append([1,0,0])
                 # else:
@@ -619,8 +531,8 @@ def createFigureGrowthMISyntactic(config, outputObjects):
                 MITrad.append(outputObjects[count].RunClacOut.MItrad)
                 #MI_tradDiff.append((outputObjects[zero_counts[j]].RunClacOut.MItrad) - (outputObjects[count].RunClacOut.MItrad))
                 growths.append(outputObjects[count].RunClacOut.growth)
-                MIWeightind.append(outputObjects[count].RunClacOut.intABWeightind)
-                MIWeightedindDiff.append(outputObjects[count].RunClacOut.intABWeightind - outputObjects[zero_counts[j]].RunClacOut.intABWeightind)
+                MIWeightind.append(outputObjects[count].RunClacOut.intabweightind)
+                MIWeightedindDiff.append(outputObjects[count].RunClacOut.intabweightind - outputObjects[zero_counts[j]].RunClacOut.intabweightind)
                 MIWeight.append(outputObjects[count].RunClacOut.intweightMImove)
 
     """""
@@ -628,9 +540,6 @@ def createFigureGrowthMISyntactic(config, outputObjects):
     ax = fig.add_subplot(111, projection='3d')
 
     # Plot the data points as scatter plot
-    print(len(growths))
-    print(len(ratioA))
-    print(growths)
     ax.scatter(ratioA, ratioAint, growths)
 
     # Create a surface from the data points
@@ -643,59 +552,353 @@ def createFigureGrowthMISyntactic(config, outputObjects):
     ax.set_xlabel('Receptor Allocation Sigmoid Coefficient')
     ax.set_ylabel('Strategy Sigmoid Coefficient')
     ax.set_zlabel('\'Useful\' Information (Adaptive) - \'Useful\' Information (Equal)')
-    ax.set_zlabel('Growth')
 
     # Show the plot
     plt.show()
     l.exit()
     """""
-    import scipy.stats as stats
-    # MIs 0.28974572341238464
-    # MImoves 0.289745723412386
-    # MITrad
-    # MIWeightedindDiff
-    x = MIWeightedindDiff
-    y = growths
+    """""
+    path = "/Users/tyler/Library/CloudStorage/OneDrive-UniversityofNebraska-Lincoln/Biosim/Data/" + outputObjects[0].PrimitiveOutput.enviornmentConcsFile
+    concentrations = utils.loadDataDate(path, False)
+    print(len(concentrations))
+    print(len(concentrations[0]))
+    print(len(concentrations[0][0]))
+    A = concentrations[0][0][0]
+    B = concentrations[0][0][1]
+
+    utils.saveData("Results/NanoCom_Data", A, "concsA_smallDis.bin")
+    utils.saveData("Results/NanoCom_Data", B, "concsB_smallDis.bin")
+    exit()
+    print("#growths")
+    print(growths)
+    utils.saveData("Results/NanoCom_Data", growths, "growths_noSub.bin")
+    print("#MI 2D2D")
+    print(MIs)
+    utils.saveData("Results/NanoCom_Data", MIs, "MIs_noSub.bin")
+    print("#weightedMI")
+    print(MIWeightedindDiff)
+    utils.saveData("Results/NanoCom_Data", MIWeightedindDiff, "MIweighted_noSub.bin")
+    print("#colors")
+    print(colors_plot1)
+    utils.saveData("Results/NanoCom_Data", colors_plot1, "colors_noSub.bin")
+    """""
+    growths_largeDis = utils.loadData("Results/NanoCom_Data/growths_largeDis.bin")
+    growths_smallDis = utils.loadData("Results/NanoCom_Data/growths_smallDis.bin")
+    growths_noSub = utils.loadData("Results/NanoCom_Data/growths_noSub.bin")
+
+    MIs_largeDis = utils.loadData("Results/NanoCom_Data/MIs_largeDis.bin")
+    MIs_smallDis = utils.loadData("Results/NanoCom_Data/MIs_smallDis.bin")
+    MIs_noSub = utils.loadData("Results/NanoCom_Data/MIs_noSub.bin")
+
+    weightedMI_largeDis = utils.loadData("Results/NanoCom_Data/MIweighted_largeDis.bin")
+    weightedMI_smallDis = utils.loadData("Results/NanoCom_Data/MIweighted_smallDis.bin")
+    weightedMI_noSub = utils.loadData("Results/NanoCom_Data/MIweighted_noSub.bin")
+
+    colors_largeDis = utils.loadData("Results/NanoCom_Data/colors_largeDis.bin")
+    colors_smallDis = utils.loadData("Results/NanoCom_Data/colors_smallDis.bin")
+    colors_noSub = utils.loadData("Results/NanoCom_Data/colors_noSub.bin")
+
+    Aconc_largeDis = utils.loadData("Results/NanoCom_Data/concsA_largeDis.bin")
+    Aconc_smallDis = utils.loadData("Results/NanoCom_Data/concsA_smallDis.bin")
+    Aconc_noSub = utils.loadData("Results/NanoCom_Data/concsA_noSub.bin")
+
+    Bconc_largeDis = utils.loadData("Results/NanoCom_Data/concsB_largeDis.bin")
+    Bconc_smallDis = utils.loadData("Results/NanoCom_Data/concsB_smallDis.bin")
+    Bconc_noSub = utils.loadData("Results/NanoCom_Data/concsB_noSub.bin")
+
+    import matplotlib.patches as mpatches
+    import matplotlib as mpl
+    mpl.rcParams['font.family'] = 'Times New Roman'
+    mpl.rcParams['pdf.fonttype'] = 42
+    figure, axis = plt.subplots(4, 2, figsize=(13, 20))
+    x = range(1000)
+    fontsize1 = 18
+    fontsize2 = 14
+
+
+    axis[0, 0].bar(x, Aconc_smallDis, width = 1, label = "A concentration", alpha = 0.5, zorder=3)
+    axis[0, 0].bar(x, Bconc_smallDis, width = 1, label = "B concentration", alpha = 0.5, zorder=3)
+    xtick = []
+    xticklabels = []
+    for i in range(0, 1100, 100):
+        xtick.append(i)
+        xticklabels.append(round(i/10))
+    axis[0,0].set_xticks(xtick, xticklabels, fontsize=fontsize2)
+    axis[0, 0].tick_params(axis='y', labelsize=fontsize2)
+    axis[0, 0].set_xlim([0, 1000])
+    axis[0, 0].set_ylim([0, 110])
+    axis[0, 0].set_xlabel("Location ($\\bar{x}$)", fontsize=fontsize1)
+    axis[0, 0].set_ylabel("Concentration", fontsize=fontsize1)
+    axis[0, 0].set_title('a.', loc='left', weight='bold', fontsize=fontsize1)
+    axis[0, 0].legend(fontsize = 12)
+    axis[0,0].grid(zorder=0)
+
+
+    axis[0, 1].bar(x, Aconc_noSub, width = 1, label = "A concentration", alpha= 0.5, zorder=3)
+    axis[0, 1].bar(x, Bconc_noSub, width = 1, label = "B concentration", alpha= 0.5, zorder=3)
+    axis[0, 1].set_xticks(xtick, xticklabels, fontsize = fontsize2)
+    axis[0, 1].tick_params(axis='y', labelsize=fontsize2)
+    axis[0, 1].set_xlim([0, 1000])
+    axis[0, 1].set_ylim([0, 110])
+    axis[0, 1].set_xlabel("Location ($\\bar{x}$)", fontsize=fontsize1)
+    axis[0, 1].set_ylabel("Concentration", fontsize=fontsize1)
+    axis[0, 1].set_title('b.', loc='left', weight='bold', fontsize=fontsize1)
+    axis[0,1].legend(fontsize = 12)
+    axis[0, 1].grid(zorder=0)
+
+    #-----------------------------------------------------------------------------
+
+    # MI
+    x = MIs_smallDis
+    y = growths_smallDis
 
     x_arr = np.array(x)
     y_arr = np.array(y)
+    import scipy.stats as stats
 
-    # Calculate the correlation coefficient and p-value
     corr_coef, p_value = stats.pearsonr(x_arr, y_arr)
 
     print("Correlation coefficient:", corr_coef)
     print("P-value:", p_value)
 
-    rects = colors.drawRectangles(100, colors_4D)
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
-    ax1.scatter(x, growths, color=colors_plot1, zorder=3)
+    axis[1, 0].scatter(x, y, color=colors_smallDis, zorder=3)
     slope, intercept = np.polyfit(x, y, 1)
-    # Plot the data and the line of best fit
-
     newpoints = []
     for i in range(len(x)):
         newpoints.append(slope * x[i] + intercept)
-    ax1.plot(x, newpoints, color='red')
+
+    axis[1, 0].plot(x, newpoints, color='red', zorder=3)
+    axis[1, 0].set_xlabel("Syntactic Information ($I_{synt}$) [bits]", fontsize=fontsize1)
+    axis[1, 0].set_ylabel("Growth", fontsize=fontsize1)
+    axis[1, 0].tick_params(axis='x', labelsize=fontsize2)
+    axis[1, 0].tick_params(axis='y', labelsize=fontsize2)
+    axis[1, 0].grid(zorder=0)
+    axis[1, 0].text(3.4, .275, "$R = $" + str(round(corr_coef * 100) / 100), fontsize=14,
+                    bbox=dict(facecolor='red', alpha=0.5))
+    axis[1, 0].text(8.4, .275, "$K = $" + str(2.0), fontsize=14,
+                    bbox=dict(facecolor='red', alpha=0.5))
+    axis[1, 0].set_title('c.', loc='left', weight='bold', fontsize=fontsize1)
+    pos = axis[1, 0].get_position()
+    new_pos = [pos.x0, pos.y0 + - 0.01, pos.width, pos.height]
+    axis[1, 0].set_position(new_pos)
+
+    # MI
+    x = MIs_noSub
+    y = growths_noSub
+
+    x_arr = np.array(x)
+    y_arr = np.array(y)
+    import scipy.stats as stats
+
+    corr_coef, p_value = stats.pearsonr(x_arr, y_arr)
+
+    print("Correlation coefficient:", corr_coef)
+    print("P-value:", p_value)
+
+    axis[1, 1].scatter(x, y, color=colors_noSub, zorder=3)
+    slope, intercept = np.polyfit(x, y, 1)
+    newpoints = []
+    for i in range(len(x)):
+        newpoints.append(slope * x[i] + intercept)
+
+    axis[1, 1].plot(x, newpoints, color='red', zorder=3)
+    axis[1, 1].set_xlabel("Syntactic Information ($I_{synt}$) [bits]", fontsize=fontsize1)
+    axis[1, 1].set_ylabel("Growth", fontsize=fontsize1)
+    axis[1, 1].tick_params(axis='x', labelsize=fontsize2)
+    axis[1, 1].tick_params(axis='y', labelsize=fontsize2)
+    axis[1, 1].grid(zorder=0)
+    axis[1, 1].text(1.407, .895, "$R = $" + str(round(corr_coef * 100) / 100), fontsize=14,
+                    bbox=dict(facecolor='red', alpha=0.5))
+    axis[1, 1].text(1.550, .895, "$K = $" + str(2.0), fontsize=14,
+                    bbox=dict(facecolor='red', alpha=0.5))
+    axis[1, 1].set_title('d.', loc='left', weight='bold', fontsize=fontsize1)
+    pos = axis[1, 1].get_position()
+    new_pos = [pos.x0, pos.y0 + - 0.01, pos.width, pos.height]
+    axis[1, 1].set_position(new_pos)
+
+
+
+
+    # MI
+    x = weightedMI_smallDis
+    y = growths_smallDis
+
+    x_arr = np.array(x)
+    y_arr = np.array(y)
+    import scipy.stats as stats
+
+    corr_coef, p_value = stats.pearsonr(x_arr, y_arr)
+
+    print("Correlation coefficient:", corr_coef)
+    print("P-value:", p_value)
+
+    axis[2, 0].scatter(x, y, color=colors_smallDis, zorder=3)
+    slope, intercept = np.polyfit(x, y, 1)
+    newpoints = []
+    for i in range(len(x)):
+        newpoints.append(slope * x[i] + intercept)
+
+    axis[2, 0].plot(x, newpoints, color='red', zorder=3)
+    axis[2, 0].set_xlabel("Subjective Information ($I_{subj}$) [bits]", fontsize=fontsize1)
+    axis[2, 0].set_ylabel("Growth", fontsize=fontsize1)
+    axis[2, 0].tick_params(axis='x', labelsize=fontsize2)
+    axis[2, 0].tick_params(axis='y', labelsize=fontsize2)
+    axis[2, 0].grid(zorder=0)
+    axis[2,0].text(-.05,.275,"$R = $" + str(round(corr_coef*100)/100), fontsize = 14 ,bbox = dict(facecolor = 'red', alpha = 0.5))
+    axis[2, 0].text(0.8, .275, "$K = $" + str(2.0), fontsize=14,
+                    bbox=dict(facecolor='red', alpha=0.5))
+    axis[2, 0].set_title('e.', loc='left', weight='bold', fontsize=fontsize1)
+    axis[2, 0].set_xlim([-0.15, 1.1])
+    pos = axis[2, 0].get_position()
+    new_pos = [pos.x0, pos.y0 + - (0.01*2), pos.width, pos.height]
+    axis[2, 0].set_position(new_pos)
+    #pos = axis[1, 0].get_position()
+    #new_pos = [pos.x0, pos.y0 + .05, pos.width, pos.height]
+    #axis[1, 0].set_position(new_pos)
+    #axis[1, 0].set_title("$R = $" + str(round(corr_coef*100)/100))
+
+    # MIWeightedindDiff
+    x = weightedMI_noSub
+    y = growths_noSub
+
+    newx = []
+    newy = []
+    newcolors = []
+    count = 0
+    for i in range(len(x)):
+        if x[i] > -0.5:
+            newx.append(x[i])
+            newy.append(y[i])
+            newcolors.append(colors_noSub[i])
+        else:
+            count +=1
+
+    print("count: " + str(count) + " ----------------------------------------------------------")
+    x = newx
+    y = newy
+    colors_noSub = newcolors
+
+    x_arr = np.array(x)
+    y_arr = np.array(y)
+    import scipy.stats as stats
+
+    corr_coef, p_value = stats.pearsonr(x_arr, y_arr)
+
+    print("Correlation coefficient:", corr_coef)
+    print("P-value:", p_value)
+
+    axis[2, 1].scatter(x, y, color=colors_noSub, zorder=3)
+    slope, intercept = np.polyfit(x, y, 1)
+    newpoints = []
+    for i in range(len(x)):
+        newpoints.append(slope * x[i] + intercept)
+    axis[2, 1].plot(x, newpoints, color='red', zorder=3)
+    axis[2, 1].set_xlabel("Subjective Information ($I_{subj}$) [bits]", fontsize=fontsize1)
+    axis[2, 1].set_ylabel("Growth", fontsize=fontsize1)
+    axis[2, 1].tick_params(axis='x', labelsize=fontsize2)
+    axis[2, 1].tick_params(axis='y', labelsize=fontsize2)
+    axis[2, 1].grid(zorder=0)
+    axis[2, 1].text(-0.095, .895, "$R = $" + str(round(corr_coef * 100) / 100), fontsize=14,
+                    bbox=dict(facecolor='red', alpha=0.5))
+    axis[2, 1].text(0.050, .895, "$K = $" + str(2.0), fontsize=14,
+                    bbox=dict(facecolor='red', alpha=0.5))
+    #pos = axis[1, 1].get_position()
+    #new_pos = [pos.x0, pos.y0 + .05 - 0.05, pos.width, pos.height]
+    #axis[1, 1].set_position(new_pos)
+    axis[2, 1].set_title('f.', loc='left',weight='bold', fontsize=fontsize1)
+    pos = axis[2, 1].get_position()
+    new_pos = [pos.x0, pos.y0 + - (0.01 * 2), pos.width, pos.height]
+    axis[2, 1].set_position(new_pos)
+    #----------------
+
+    # MIWeightedindDiff
+    x = weightedMI_largeDis
+    y = growths_largeDis
+
+    x_arr = np.array(x)
+    y_arr = np.array(y)
+    import scipy.stats as stats
+
+    corr_coef, p_value = stats.pearsonr(x_arr, y_arr)
+
+    print("Correlation coefficient:", corr_coef)
+    print("P-value:", p_value)
+
+    axis[3, 0].scatter(x, y, color=colors_largeDis, zorder=3)
+    slope, intercept = np.polyfit(x, y, 1)
+    newpoints = []
+    for i in range(len(x)):
+        newpoints.append(slope * x[i] + intercept)
+    axis[3, 0].plot(x, newpoints, color='red', zorder=3)
+    axis[3, 0].set_xlabel("Subjective Information ($I_{subj}$) [bits]", fontsize=fontsize1)
+    axis[3, 0].set_ylabel("Growth", fontsize=fontsize1)
+    axis[3, 0].tick_params(axis='x', labelsize=fontsize2)
+    axis[3, 0].tick_params(axis='y', labelsize=fontsize2)
+    axis[3, 0].grid(zorder=0)
+    axis[3, 0].text(-.05, .245, "$R = $" + str(round(corr_coef * 100) / 100), fontsize=14,
+                    bbox=dict(facecolor='red', alpha=0.5))
+    axis[3, 0].text(0.8, .245, "$K = $" + str(10.0), fontsize=14,
+                    bbox=dict(facecolor='red', alpha=0.5))
+    # pos = axis[1, 1].get_position()
+    # new_pos = [pos.x0, pos.y0 + .05 - 0.05, pos.width, pos.height]
+    # axis[1, 1].set_position(new_pos)
+    axis[3, 0].set_title('g.', loc='left', weight='bold', fontsize=fontsize1)
+    axis[3, 0].set_xlim([-0.15, 1.1])
+    pos = axis[3, 0].get_position()
+    new_pos = [pos.x0, pos.y0 + - (0.01 * 3), pos.width, pos.height]
+    axis[3, 0].set_position(new_pos)
+
+    #fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    rects = colors.drawRectangles(100, colors_4D)
+    for box in rects:
+        axis[3, 1].add_patch(box)
+
+    axis[3, 1].set_xlim(0, 1)
+    axis[3, 1].set_ylim(0, 1)
+    axis[3, 1].set_xticks([0, 0.2, 0.4, 0.6, 0.8,  1], [-50, -30, -10, 10, 30, 50], fontsize = fontsize2)
+    # ax2.set_xticks([0, 1], [-50, 50])
+    axis[3, 1].set_yticks([0, 0.2, 0.4, 0.6, 0.8,  1],  [-50, -30, -10, 10, 30, 50], fontsize = fontsize2)
+    axis[3, 1].grid(color = 'black', alpha = 0.7, linestyle = '--', linewidth = 1)
+    # ax2.set_yticks([0, 1], [-50, 50])
+
+
+    axis[3, 1].set_xlabel("$Gain_{Acq}$", fontsize=fontsize1)
+    axis[3, 1].set_ylabel("$Gain_{Proc}$", fontsize=fontsize1)
+    axis[3, 1].set_title('h.', loc='left', weight='bold', fontsize=fontsize1)
+    pos = axis[3, 1].get_position()
+    new_pos = [pos.x0, pos.y0 + - (0.01 * 3), pos.width, pos.height]
+    axis[3, 1].set_position(new_pos)
+
+    #plt.show()
+
+    plt.savefig("Results/full.pdf")
+
+    #
+    #fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+
+    # Plot the data and the line of best fit
+
+
     # plt.scatter(2, 2, color = 'Blue', label = "Strategy Sigmoid Coefficient")
     # plt.scatter(2, 2, color = 'Red', label = "Receptor Allocation Sigmoid Coefficient")
-    ax1.set_xlabel("MI Weighted Information")
-    #ax1.set_xlabel("Syntactic Information")
-    # plt.xlim([0, 0.6])
-    ax1.set_ylabel("Growth")
-    # plt.ylim([-.1, .25])
-    ax1.grid(zorder=0)
-    # plt.legend()
+    #ax1.set_xlabel("Subjective Information")
 
+    # plt.legend()
+    exit()
+    plt.clf()
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    rects = colors.drawRectangles(100, colors_4D)
     for box in rects:
         ax2.add_patch(box)
 
     ax2.set_xlim(0, 1)
     ax2.set_ylim(0, 1)
-    #ax2.set_xticks([0, 1], [-50, 50])
     ax2.set_xticks([0, 1], [-50, 50])
-    #ax2.set_yticks([0, 1], [-50, 50])
+    #ax2.set_xticks([0, 1], [-50, 50])
     ax2.set_yticks([0, 1], [-50, 50])
+    #ax2.set_yticks([0, 1], [-50, 50])
     ax2.set_xlabel("Receptor Allocation Gain")
     ax2.set_ylabel("Strategy Gain")
+
     plt.show()
 
