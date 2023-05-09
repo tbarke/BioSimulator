@@ -1,4 +1,4 @@
-path = E:/OneDrive - University of Nebraska-Lincoln/Biosim/Data
+path = Data
 givenRunName = vonMisesRatioIsolatedLargeDis
 newRun = True
 runSim = True
@@ -10,5 +10,5 @@ calculateResults = True
 calculation_parameters = [True, True, True, True, True, True, True]
 #calculation_parameters = [False, False, False, False, False, False, True]
 config_file = Configs/vonMisesLargeDissIdentical_05-05-23.cfg
-mfhConcProfile = C:\Users\Tyler\OneDrive - University of Nebraska-Lincoln\Biosim\Data/mfhProfiles/mfhTestStressmfhProfile.bin
+mfhConcProfile = None
 mfhConcFlag = False
