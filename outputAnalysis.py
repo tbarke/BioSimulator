@@ -26,11 +26,12 @@ def calcGrowth(file, config):
     avg_growth = (avg_growth / len(growth)) * (1 / config.simParams.simTimeStep)
     return avg_growth
 
-def MIMoveWeighted(concs, moves, inters, binsMI, binsintAB):
+def MIMoveWeighted(concs, moves, inters, binsMI, binsintAB, oneD):
     # list of concs: AR, AL, BR, BL
     # list of moves: absolute velocity
     # list of internal states intA, intB
     # find max intA and intA
+    print(len(moves[0]))
 
     def findMI(indexes):
         currConcsAR = []
@@ -51,24 +52,42 @@ def MIMoveWeighted(concs, moves, inters, binsMI, binsintAB):
 
 
     def findBins(intA, intB):
-        maxintA = max(intA)
-        maxintB = max(intB)
-        minintA = min(intA)
-        minintB = min(intB)
-        binWidthA = (maxintA-minintA)/binsintAB
-        binWidthB = (maxintB-minintB)/binsintAB
-        binedgesA = utils.list_empty([binsintAB+1], 0)
-        binedgesB = utils.list_empty([binsintAB+1], 0)
-        binAB = utils.list_empty([binsintAB, binsintAB], [])
-        for i in range(binsintAB+1):
-            binedgesA[i] = minintA + binWidthA * i
-            binedgesB[i] = minintB + binWidthB * i
-        binedgesA[0] = binedgesA[0] - 0.01
-        binedgesB[0] = binedgesB[0] - 0.01
+        if not oneD:
+            maxintA = max(intA)
+            maxintB = max(intB)
+            minintA = min(intA)
+            minintB = min(intB)
+            binWidthA = (maxintA-minintA)/binsintAB
+            binWidthB = (maxintB-minintB)/binsintAB
+            binedgesA = utils.list_empty([binsintAB+1], 0)
+            binedgesB = utils.list_empty([binsintAB+1], 0)
+            binAB = utils.list_empty([binsintAB, binsintAB], [])
+            for i in range(binsintAB+1):
+                binedgesA[i] = minintA + binWidthA * i
+                binedgesB[i] = minintB + binWidthB * i
+            binedgesA[0] = binedgesA[0] - 0.01
+            binedgesB[0] = binedgesB[0] - 0.01
 
-        binedgesA[binsintAB] = binedgesA[binsintAB] + 0.01
-        binedgesB[binsintAB] = binedgesB[binsintAB] + 0.01
-        return binedgesA, binedgesB, binAB
+            binedgesA[binsintAB] = binedgesA[binsintAB] + 0.01
+            binedgesB[binsintAB] = binedgesB[binsintAB] + 0.01
+            return binedgesA, binedgesB, binAB
+        else:
+            intRatio = []
+            for i in range(len(intA)):
+                if intA[i] + intB[i] >0:
+                    intRatio.append(intA[i]/(intA[i] + intB[i]))
+                else:
+                    intRatio.append(0.0)
+            maxintABrat = max(intRatio)
+            minintABrat = min(intRatio)
+            binWidthArat = (maxintABrat - minintABrat) / binsintAB
+            binedgesArat = utils.list_empty([binsintAB + 1], 0)
+            binAB = utils.list_empty([binsintAB], [])
+            for i in range(binsintAB+1):
+                binedgesArat[i] = minintABrat + binWidthArat * i
+            binedgesArat[0] = binedgesArat[0] - 0.01
+            binedgesArat[binsintAB] = binedgesArat[binsintAB] + 0.01
+            return binedgesArat, binedgesArat, binAB
 
     # divide into total bins used
     binedgeA, binedgeB, binAB = findBins(inters[0], inters[1])
@@ -76,26 +95,52 @@ def MIMoveWeighted(concs, moves, inters, binsMI, binsintAB):
     #print(binedgeB)
 
     def findBin(intA, intB):
-        for i in range(len(binedgeA)):
-            if intA >= binedgeA[i] and intA < binedgeA[i + 1]:
-                for j in range(len(binedgeA)):
-                    if intB >= binedgeB[j] and intB < binedgeB[j +1]:
-                        return i, j
+        if not oneD:
+            for i in range(len(binedgeA)):
+                if intA >= binedgeA[i] and intA < binedgeA[i + 1]:
+                    for j in range(len(binedgeA)):
+                        if intB >= binedgeB[j] and intB < binedgeB[j +1]:
+                            return i, j
+        else:
+            if (intA+intB) > 0:
+                intRat = intA/(intA+intB)
+            else:
+                intRat = 0.0
+            for i in range(len(binedgeA)):
+                if intRat >= binedgeA[i] and intRat < binedgeA[i+1]:
+                    return i, i
 
     for i in range(len(inters[0])):
         curr_intA = inters[0][i]
         curr_intB = inters[1][i]
         indexA, indexB = findBin(curr_intA, curr_intB)
-        binAB[indexA][indexB].append(i)
+        if not oneD:
+            binAB[indexA][indexB].append(i)
+        else:
+            binAB[indexA].append(i)
 
-    binProbs = utils.list_empty([binsintAB, binsintAB], 0)
+    if not oneD:
+        binProbs = utils.list_empty([binsintAB, binsintAB], 0)
+    else:
+        binProbs = utils.list_empty([binsintAB], 0)
     for i in range(len(binAB)):
+        if oneD:
+            binProbs[i] = len(binAB[i])/len(moves[0])
+            continue
         for j in range(len(binAB[0])):
             binProbs[i][j] = len(binAB[i][j])/len(moves[0])
 
     MIweight = 0
-    binABind = utils.list_empty([binsintAB, binsintAB], [])
+    if not oneD:
+        binABind = utils.list_empty([binsintAB, binsintAB], [])
+    else:
+        binABind = utils.list_empty([binsintAB], [])
     for i in range(len(binAB)):
+        if oneD:
+            currMIA, currMIB = findMI(binAB[i])
+            binABind[i] = [currMIA, currMIB]
+            MIweight += (currMIA + currMIB) * binProbs[i]
+            continue
         for j in range(len(binAB[0])):
             currMIA, currMIB = findMI(binAB[i][j])
             binABind[i][j] = [currMIA, currMIB]
@@ -117,20 +162,21 @@ def MI_trad(ext, bound, k, bins):
     MI = MI_obj.AltMI(dataX, dataY, bins)[0]
     return MI
 
-def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWeightFlag, ABintdynamicWeightFlag, intABFile = None, extABFile = None, moveFile = None, boundFile = None, totalCellsFile = None):
+def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWeightFlag, ABintdynamicWeightFlag, intABFile = None, extABFile = None, moveFile = None, boundFile = None, totalCellsFile = None, recsFile = None):
     extAB = None
     move = None
     boundAB = None
     intAB = None
-    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag:
+    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
         extAB = utils.loadDataDate(extABFile, False)
-    if MIMoveFlag or intWeightFlag:
+    if MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
         move = utils.loadDataDate(moveFile, False)
-    if MITradFlag or MI2d2dFlag or MIMoveFlag:
+    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
         boundAB = utils.loadDataDate(boundFile, False)
 
-    if intWeightFlag:
+    if intWeightFlag or ABintdynamicWeightFlag:
         intAB = utils.loadDataDate(intABFile, False)
+        recs = utils.loadDataDate(recsFile, False)
 
     ext_A = []
     ext_B = []
@@ -163,16 +209,19 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     intAall =[]
     intBall = []
 
-    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag:
+    Arecs = []
+    Brecs = []
+
+    if MITradFlag or MI2d2dFlag or MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
         for i in range(len(extAB[0])):
             for j in range(len(extAB[0][i])):
                 count += 1
-                if MIMoveFlag:
+                if MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
                     move_arr.append(move[0][i][j])
-                if MI2d2dFlag or MIMoveFlag:
+                if MI2d2dFlag or MIMoveFlag or intWeightFlag or ABintdynamicWeightFlag:
                     ext_A.append(extAB[0][i][j][1] - extAB[0][i][j][0])
                     ext_B.append(extAB[0][i][j][3] - extAB[0][i][j][2])
-                if MI2d2dFlag:
+                if MI2d2dFlag or intWeightFlag or ABintdynamicWeightFlag:
                     boundAB_all = math.fabs(boundAB[0][i][j][1] - boundAB[0][i][j][0]) + math.fabs(boundAB[0][i][j][3] - boundAB[0][i][j][2])
                     if boundAB_all > 0:
                         boundA.append((boundAB[0][i][j][1] - boundAB[0][i][j][0])/boundAB_all)
@@ -181,7 +230,7 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
                         boundA.append(0)
                         boundB.append(0)
 
-                if MITradFlag or MIMoveFlag or MI2d2dFlag:
+                if MITradFlag or MIMoveFlag or MI2d2dFlag or intWeightFlag or ABintdynamicWeightFlag:
                     extAL.append(extAB[0][i][j][0])
                     extAR.append(extAB[0][i][j][1])
                     #------------bound A------------
@@ -193,11 +242,15 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
                     # ------------bound A------------
                     boundBL.append(boundAB[0][i][j][2])
                     boundBR.append(boundAB[0][i][j][3])
-                if intWeightFlag:
+                if intWeightFlag or ABintdynamicWeightFlag:
                     intA_curr = intAB[0][i][j][0]
                     intB_curr = intAB[0][i][j][1]
+                    Arec_curr = recs[0][i][j][0]
+                    Brec_curr = recs[0][i][j][1]
                     intAall.append(intA_curr)
                     intBall.append(intB_curr)
+                    Arecs.append(Arec_curr)
+                    Brecs.append(Brec_curr)
                     if intA_curr > intB_curr:
                         intBextBL.append(extAB[0][i][j][2])
                         intBextBR.append(extAB[0][i][j][3])
@@ -217,6 +270,7 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
 
     k = 1
     if count > 20000:
+        print("this happened")
         k = math.ceil(count / 10000)
 
     def reduce(arr, k):
@@ -224,6 +278,11 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
         for i in range(0, len(arr), k):
             new.append(arr[i])
         return new
+
+    """""
+
+    Arecs = reduce(Arecs, k)
+    Brecs = reduce(Brecs, k)
 
     extAR = reduce(extAR, k)
     extAL = reduce(extAL, k)
@@ -247,7 +306,7 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     intBextBL = reduce(intBextBL, k)
     intBextBR = reduce(intBextBR, k)
     intBMove = reduce(intBMove, k)
-
+    """""
 
     if MITradFlag:
         MITrad = MI_trad([extAL, extAR, extBL, extBR], [boundAL, boundAR, boundBL, boundBR], k, bins)
@@ -257,9 +316,31 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
         MI2D2D2 = utils.MI2D2D(extBR, extBL, boundBR, boundBL, bins)[0]
         MI2D2D = MI2D2D1 + MI2D2D2
     if MIMoveFlag:
-        MImove1 = utils.MI2D1D(extAR, extAL, move_arr, bins)[0]
-        MImove2 = utils.MI2D1D(extBR, extBL, move_arr, bins)[0]
-        MImove = MImove1 + MImove2
+        #TODO fix old MI move code
+        #MImove1 = utils.MI2D1D(extAR, extAL, move_arr, bins)[0]
+        #MImove2 = utils.MI2D1D(extBR, extBL, move_arr, bins)[0]
+        #MImove = MImove1 + MImove2
+        ARboundNorm = []
+        ALboundNorm = []
+        BRboundNorm = []
+        BLboundNorm = []
+        for i in range(len(boundAR)):
+            if Arecs[i] > 0:
+                ARboundNorm.append(boundAR[i]/(Arecs[i]/2))
+                ALboundNorm.append(boundAL[i]/(Arecs[i]/2))
+            else:
+                ARboundNorm.append(0.0)
+                ALboundNorm.append(0.0)
+
+            if Brecs[i] > 0:
+                BRboundNorm.append(boundBR[i] / (Brecs[i] / 2))
+                BLboundNorm.append(boundBL[i] / (Brecs[i] / 2))
+            else:
+                BRboundNorm.append(0.0)
+                BLboundNorm.append(0.0)
+        MIsyntA = utils.MI2D2D(extAR, extAL, ARboundNorm, ALboundNorm, bins)[0]
+        MIsyntB = utils.MI2D2D(extBR, extBL, BRboundNorm, BLboundNorm, bins)[0]
+        MImove = MIsyntA + MIsyntB
     if growthFlag:
         growth = calcGrowth(totalCellsFile, config)
     if intWeightFlag:
@@ -269,9 +350,11 @@ def CalcData(config, bins, MITradFlag, MI2d2dFlag, MIMoveFlag, growthFlag, intWe
     if ABintdynamicWeightFlag:
         #concs, moves, inters, binsMI, binsintAB
         concs = [extAR, extAL, extBR, extBL]
+        BoundRecs = [boundAR, boundAL, boundBR, boundBL]
+        recs = [Arecs, Brecs]
         moves = [move_arr]
         inters = [intAall, intBall]
-        weightedMI, binMI = MIMoveWeighted(concs, moves, inters, 30, 20)
+        weightedMI, binMI = MIMoveWeighted(concs, moves, inters, 30, 10, False)
         weightedMIind = weightedMI
 
 
@@ -492,13 +575,13 @@ def createFigureGrowthMISyntactic(config, outputObjects):
             print()
             # print("here" + str(output_objects[count].RunClacOut.MI2D2D))
             count += 1
-            if outputObjects[count].RunClacOut.MI2D2D != '':# and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
+            if outputObjects[count].RunClacOut.MI2D2D != '' and not isinstance(outputObjects[count].RunClacOut.growth, str):# and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
             #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
             #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] <= 0 and config.runStats.cellRatioAIntEmphasis[j] >= 0:
             #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0 and config.runStats.cellRatioAIntEmphasis[j] <= 0:
             #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] <= 0 and config.runStats.cellRatioAIntEmphasis[j] <= 0:
             #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAIntEmphasis[j] <= 0:
-            #if outputObjects[count].RunClacOut.MI2D2D != '' and config.runStats.cellRatioAEmphasis[i] >= 0:
+            #if outputObjects[count].RunClacOut.MI2D2D != '' and  config.runStats.cellRatioAEmphasis[i] >= 0:
                 # if c.runStats.cellRatioAEmphasis[i] != 0:
                 #    colors_plot.append([1,0,0])
                 # else:
@@ -536,15 +619,18 @@ def createFigureGrowthMISyntactic(config, outputObjects):
                 MITrad.append(outputObjects[count].RunClacOut.MItrad)
                 #MI_tradDiff.append((outputObjects[zero_counts[j]].RunClacOut.MItrad) - (outputObjects[count].RunClacOut.MItrad))
                 growths.append(outputObjects[count].RunClacOut.growth)
-                MIWeightind.append(outputObjects[count].RunClacOut.intabweightind)
-                MIWeightedindDiff.append(outputObjects[count].RunClacOut.intabweightind - outputObjects[zero_counts[j]].RunClacOut.intabweightind)
+                MIWeightind.append(outputObjects[count].RunClacOut.intABWeightind)
+                MIWeightedindDiff.append(outputObjects[count].RunClacOut.intABWeightind - outputObjects[zero_counts[j]].RunClacOut.intABWeightind)
                 MIWeight.append(outputObjects[count].RunClacOut.intweightMImove)
 
-
+    """""
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
     # Plot the data points as scatter plot
+    print(len(growths))
+    print(len(ratioA))
+    print(growths)
     ax.scatter(ratioA, ratioAint, growths)
 
     # Create a surface from the data points
@@ -557,19 +643,42 @@ def createFigureGrowthMISyntactic(config, outputObjects):
     ax.set_xlabel('Receptor Allocation Sigmoid Coefficient')
     ax.set_ylabel('Strategy Sigmoid Coefficient')
     ax.set_zlabel('\'Useful\' Information (Adaptive) - \'Useful\' Information (Equal)')
+    ax.set_zlabel('Growth')
 
     # Show the plot
     plt.show()
     l.exit()
+    """""
+    import scipy.stats as stats
+    # MIs 0.28974572341238464
+    # MImoves 0.289745723412386
+    # MITrad
+    # MIWeightedindDiff
+    x = MIWeightedindDiff
+    y = growths
 
+    x_arr = np.array(x)
+    y_arr = np.array(y)
 
+    # Calculate the correlation coefficient and p-value
+    corr_coef, p_value = stats.pearsonr(x_arr, y_arr)
+
+    print("Correlation coefficient:", corr_coef)
+    print("P-value:", p_value)
 
     rects = colors.drawRectangles(100, colors_4D)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
-    ax1.scatter(MIs, growths, color=colors_plot1, zorder=3)
+    ax1.scatter(x, growths, color=colors_plot1, zorder=3)
+    slope, intercept = np.polyfit(x, y, 1)
+    # Plot the data and the line of best fit
+
+    newpoints = []
+    for i in range(len(x)):
+        newpoints.append(slope * x[i] + intercept)
+    ax1.plot(x, newpoints, color='red')
     # plt.scatter(2, 2, color = 'Blue', label = "Strategy Sigmoid Coefficient")
     # plt.scatter(2, 2, color = 'Red', label = "Receptor Allocation Sigmoid Coefficient")
-    ax1.set_xlabel("Subjective Information")
+    ax1.set_xlabel("MI Weighted Information")
     #ax1.set_xlabel("Syntactic Information")
     # plt.xlim([0, 0.6])
     ax1.set_ylabel("Growth")

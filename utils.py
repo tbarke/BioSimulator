@@ -439,6 +439,9 @@ def threeDmap(inputX, inputY, Z):
     plt.show()
 
 def MI2D2D(X1, X2, Y1, Y2, bins):
+    if len(X1) == 0:
+        return 0,0,0
+
     def matchBinPos(binPos, y):
         for i in range(len(binPos) - 1):
             if y >= binPos[i] and y < binPos[i + 1]:
@@ -473,6 +476,8 @@ def MI2D2D(X1, X2, Y1, Y2, bins):
         max_dat = max(data)
         min_dat = min(data)
         epsilon = math.fabs(0.01 * ((max_dat - min_dat) / bins))
+        if max_dat == min_dat:
+            epsilon = 0.01
         return np.linspace(min_dat - epsilon, max_dat + epsilon, bins + 1)
 
     def entropy2d(data1, data2, edges1, edges2):

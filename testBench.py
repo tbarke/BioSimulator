@@ -22,6 +22,291 @@ l = log.log()
 
 def main():
 
+    """""
+    #------------------------------------------------------------------------ -20 20
+
+    move = utils.loadData("C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/ratio_Aratio-20_AratioInt20_19_57_44/cellMovement_19_58_13.982298.bin")
+    concs = utils.loadData("C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/ratio_Aratio-20_AratioInt20_19_57_44/enviornmentConcs_19_58_14.828036.bin")
+    locs = utils.loadData("C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim\Data/2023-03-30/manaFromHeavenRatioIsolated/ratio_Aratio-20_AratioInt20_19_57_44/cellLocations_19_58_13.973322.bin")
+
+    concs = utils.loadData('C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-04-06/mfhTestStress/ratio_constUpDown_Aratio0_AratioInt0_10_38_52/enviornmentConcs_10_39_00.513853.bin')
+
+    plt.plot(concs[0][0], label = 'A Concentration')
+    plt.plot(concs[0][1], label = 'B Concentration')
+    plt.legend()
+    plt.xlabel('Location')
+    plt.ylabel('Concentration')
+    plt.show()
+
+
+    exit()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(locs)):
+        # print(len(move[i]))
+        for j in range(len(locs[i])):
+            allVel.append(locs[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Location')
+    plt.ylabel('cells')
+    plt.title('receptor gain -20, strategy gain 20')
+    plt.show()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(move)):
+        # print(len(move[i]))
+        for j in range(len(move[i])):
+            allVel.append(move[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Movement Velocity')
+    plt.ylabel('cells')
+    plt.title('receptor gain -20, strategy gain 20')
+    plt.show()
+
+    #--------------------------------------------------------------------------------- 50 50
+    folder = 'ratio_Aratio50_AratioInt50_21_53_02'
+    stri = 'cellMovement_21_53_31.082037.bin'
+    move = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder  + "/" + stri)
+    stri = 'enviornmentConcs_21_53_31.914838.bin'
+    concs = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder  + "/" + stri)
+    stri = 'cellLocations_21_53_31.072064.bin'
+    locs = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim\Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder  + "/" + stri)
+
+    #print(len(concs))
+    #Aconc = concs[0][0]
+    #Bconc = concs[0][1]
+    ##plt.plot(Aconc)
+    #plt.plot(Bconc)
+    #plt.show()
+    #plt.clf()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(locs)):
+        # print(len(move[i]))
+        for j in range(len(locs[i])):
+            allVel.append(locs[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Location')
+    plt.ylabel('cells')
+    plt.title('receptor gain 50, strategy gain 50')
+    plt.show()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(move)):
+        # print(len(move[i]))
+        for j in range(len(move[i])):
+            allVel.append(move[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Movement Velocity')
+    plt.ylabel('cells')
+    plt.title('receptor gain 50, strategy gain 50')
+    plt.show()
+
+    #------------------------------------------------------------------------------------- 50 -50
+    folder = 'ratio_Aratio-50_AratioInt-50_19_25_29'
+    stri = 'cellMovement_19_25_57.019628.bin'
+    move = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder  + "/" + stri)
+    #concs = utils.loadData(
+    #   "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder  + "/" + stri)
+    stri = 'cellLocations_19_25_57.011633.bin'
+    locs = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim\Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder  + "/" + stri)
+
+    #print(len(concs))
+    #Aconc = concs[0][0]
+    #Bconc = concs[0][1]
+    #plt.plot(Aconc)
+    #plt.plot(Bconc)
+    #plt.show()
+    #plt.clf()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(locs)):
+        # print(len(move[i]))
+        for j in range(len(locs[i])):
+            allVel.append(locs[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Location')
+    plt.ylabel('cells')
+    plt.title('receptor gain 50, strategy gain -50')
+    plt.show()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(move)):
+        # print(len(move[i]))
+        for j in range(len(move[i])):
+            allVel.append(move[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Movement Velocity')
+    plt.ylabel('cells')
+    plt.title('receptor gain 50, strategy gain -50')
+    plt.show()
+
+    # ------------------------------------------------------------------------------------- 20 -20
+    folder = 'ratio_Aratio20_AratioInt-20_21_20_49'
+    stri = 'cellMovement_21_21_19.203527.bin'
+    move = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder + "/" + stri)
+    # concs = utils.loadData(
+    #   "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated" + folder  + "/" + stri)
+    stri = 'cellLocations_21_21_19.192557.bin'
+    locs = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim\Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder + "/" + stri)
+
+    # print(len(concs))
+    # Aconc = concs[0][0]
+    # Bconc = concs[0][1]
+    # plt.plot(Aconc)
+    # plt.plot(Bconc)
+    # plt.show()
+    # plt.clf()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(locs)):
+        # print(len(move[i]))
+        for j in range(len(locs[i])):
+            allVel.append(locs[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Location')
+    plt.ylabel('cells')
+    plt.title('receptor gain 20, strategy gain -20')
+    plt.show()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(move)):
+        # print(len(move[i]))
+        for j in range(len(move[i])):
+            allVel.append(move[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Movement Velocity')
+    plt.ylabel('cells')
+    plt.title('receptor gain 20, strategy gain -20')
+    plt.show()
+
+    # ------------------------------------------------------------------------------------- -20 50
+    folder = 'ratio_Aratio-20_AratioInt50_19_59_15'
+    stri = 'cellMovement_19_59_44.973613.bin'
+    move = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder + "/" + stri)
+    # concs = utils.loadData(
+    #   "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder  + "/" + stri)
+    stri = 'cellLocations_19_59_44.962663.bin'
+    locs = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim\Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder + "/" + stri)
+
+    # print(len(concs))
+    # Aconc = concs[0][0]
+    # Bconc = concs[0][1]
+    # plt.plot(Aconc)
+    # plt.plot(Bconc)
+    # plt.show()
+    # plt.clf()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(locs)):
+        # print(len(move[i]))
+        for j in range(len(locs[i])):
+            allVel.append(locs[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Location')
+    plt.ylabel('cells')
+    plt.title('receptor gain -20, strategy gain 50')
+    plt.show()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(move)):
+        # print(len(move[i]))
+        for j in range(len(move[i])):
+            allVel.append(move[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Movement Velocity')
+    plt.ylabel('cells')
+    plt.title('receptor gain -20, strategy gain 50')
+    plt.show()
+
+    # ------------------------------------------------------------------------------------- 50 -20
+    folder = 'ratio_Aratio50_AratioInt-20_21_46_35'
+    stri = 'cellMovement_21_47_03.562423.bin'
+    move = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder + "/" + stri)
+    # concs = utils.loadData(
+    #   "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim/Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder  + "/" + stri)
+    stri = 'cellLocations_21_47_03.551452.bin'
+    locs = utils.loadData(
+        "C:/Users/Tyler/OneDrive - University of Nebraska-Lincoln/Biosim\Data/2023-03-30/manaFromHeavenRatioIsolated/" + folder + "/" + stri)
+
+    # print(len(concs))
+    # Aconc = concs[0][0]
+    # Bconc = concs[0][1]
+    # plt.plot(Aconc)
+    # plt.plot(Bconc)
+    # plt.show()
+    # plt.clf()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(locs)):
+        # print(len(move[i]))
+        for j in range(len(locs[i])):
+            allVel.append(locs[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Location')
+    plt.ylabel('cells')
+    plt.title('receptor gain 50, strategy gain -20')
+    plt.show()
+
+    allVel = []
+    # print(len(move))
+    for i in range(len(move)):
+        # print(len(move[i]))
+        for j in range(len(move[i])):
+            allVel.append(move[i][j])
+
+    plt.clf()
+    plt.hist(allVel, bins=50)
+    plt.xlabel('Movement Velocity')
+    plt.ylabel('cells')
+    plt.title('receptor gain 50, strategy gain -20')
+    plt.show()
+
+    exit()
+"""""
     def createMFHProfile(c, init):
         def runConcentrationAdjusted(A, B):
             adjustedAdiffusion = (c.concParams.diffCoeff / (c.simParams.locationStep * c.simParams.locationStep)) * c.simParams.simTimeStep
@@ -101,9 +386,12 @@ def main():
 
     if mfhConcFlag:
         As, Bs = createMFHProfile(c, c.concParams.constantConc)
-        mfhconcFile = utils.saveData(c.runStats.saveDir, [As,Bs], 'mfhProfiles/' +mfhprofile)
-        c.simParams.AconcFile = mfhconcFile
-        c.simParams.BconcFile = mfhconcFile
+        mfhconcFile = utils.saveData(c.runStats.saveDir, [As,Bs], 'mfhProfiles/' +givenRunName + 'mfhProfile.bin')
+        l.log("created mfh profile File: " + mfhconcFile)
+        mfhprofile = mfhconcFile
+
+    c.simParams.AconcFile = mfhprofile
+    c.simParams.BconcFile = mfhprofile
 
     # give run name
     runName = givenRunName
@@ -239,14 +527,14 @@ def createNewConfig(configName):
     # set config flag to save results
     c.runOutputFlags.save = True
     # set simulation time length
-    c.simParams.simLength = 10
+    c.simParams.simLength = 20
     # set save compression
     c.runOutputFlags.compressSave = True
     # set simulation time step
     c.simParams.simTimeStep = .05
     c.cellMetaStats.stress = 0.05
     c.cellMetaStats.absorptionRate = 1 / c.cellMetaStats.stress
-    c.cellMetaStats.survivalCost = 100
+    c.cellMetaStats.survivalCost = 200
     c.concParams.VonMisesMagnitude = 200
     c.runOutputFlags.compressSave = False
     # set Cell strategy
@@ -268,7 +556,18 @@ def createNewConfig(configName):
     c.simParams.presetSave = False
     c.concParams.concProfile = 'vonMises'
     c.simParams.presetBool = True
-    c.cellMetaStats.dissocociationConstant = 2.0
+    c.cellMetaStats.dissocociationConstant = 10.0
+
+    c.concParams.diffCoeff = 10
+    c.simParams.aknoght = 200
+    c.simParams.gamma = 0.05
+    c.simParams.lam = 0.4
+    c.concParams.constantConc = 20
+
+    c.concParams.uphillHigh = 20
+
+    c.concParams.VonMisesAOffset = 0
+    c.concParams.VonMisesBOffset = 0
 
     # set output file flags
     c.outputFlags.totalcells = True
@@ -287,7 +586,7 @@ def createNewConfig(configName):
     #c.runStats.cellRatioAIntEmphasis = [-50, -40, -30, -20, -10, -5, -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1,1.5, 2, 2.5, 3, 3.5, 4, 5, 10, 20, 30, 40, 50]
     c.runStats.cellRatioAIntEmphasis = [-50,-40, -30, -20, -10, -5, -2, -1, 0, 1,2,5, 10, 20, 30, 40, 50]
     #c.runStats.cellRatioAIntEmphasis = [-11,-9, -7]
-    c.runStats.enviornmentArray = ["manaFromHeaven"]
+    c.runStats.enviornmentArray = ["vonMises"]
     c.runStats.cellStrategiesArray = ["ratio"]
     path = 'Configs/'+configName
     c.writeConfig(path)

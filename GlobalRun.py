@@ -8,8 +8,8 @@ dateTime = str(utils.getTodaysDate()) + '_' + utils.getTime()
 l = log.log('Logs/'+dateTime + '.log')
 
 try:
-    #path = testBench.createNewConfig('manaFromHeavenRatioSmall_3-27-23.cfg')
-    #l.log(path)
+    path = testBench.createNewConfig('vonMisesLargeDissIdentical_05-05-23.cfg')
+    l.log(path)
     testBench.main()
 except Exception as e:
     l.handleException(e)

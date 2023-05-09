@@ -58,8 +58,9 @@ class output(object):
             cellMovementFileRef = self.refactorfile(self.PrimitiveOutput.cellMovementFile, path)
             boundReceptorsFileRef = self.refactorfile(self.PrimitiveOutput.boundReceptorsFile, path)
             totalcellsFileRef = self.refactorfile(self.PrimitiveOutput.totalcellsFile, path)
+            recsFileRef = self.refactorfile(self.PrimitiveOutput.totalReceptorsFile, path)
 
-            MITrad, MI2D2D, MImove, growth, intweightMImove, intABWeightind = outputAnalysis.CalcData(config, bins, MITradFlag = MItradFlag, MI2d2dFlag = MI2D2DFlag, MIMoveFlag = MI2D1DFlag, growthFlag = growthFlag, intWeightFlag = intweightMImoveFlag, ABintdynamicWeightFlag = ABintdynamicWeightFlag, intABFile = internalABFileRef, extABFile = totalConcsFileRef, moveFile = cellMovementFileRef, boundFile = boundReceptorsFileRef, totalCellsFile =totalcellsFileRef)
+            MITrad, MI2D2D, MImove, growth, intweightMImove, intABWeightind = outputAnalysis.CalcData(config, bins, MITradFlag = MItradFlag, MI2d2dFlag = MI2D2DFlag, MIMoveFlag = MI2D1DFlag, growthFlag = growthFlag, intWeightFlag = intweightMImoveFlag, ABintdynamicWeightFlag = ABintdynamicWeightFlag, intABFile = internalABFileRef, extABFile = totalConcsFileRef, moveFile = cellMovementFileRef, boundFile = boundReceptorsFileRef, totalCellsFile =totalcellsFileRef, recsFile=recsFileRef)
             #TODO fix below and in write (object should be lower case to use the constructor, but this will break below)
             if MItradFlag:
                 self.RunClacOut.MItrad = MITrad

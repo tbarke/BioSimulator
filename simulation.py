@@ -682,37 +682,6 @@ class simulation(object):
 
                 self.SimEnviornment.Aconcentrations = presetAconcs[i]
                 self.SimEnviornment.Bconcentrations = presetBconcs[i]
-                # run mana from heaven
-                """""
-                if not config.simParams.presetBool:
-                    rand1 = random.uniform(0, 1)
-                    rand2 = random.uniform(0, 1)
-                    if rand1 < muadj:
-                        locationA = random.randint(0, self.SimEnviornment.length-1)
-                        if config.simParams.presetSave:
-                            config.simParams.presetA_time.append(i)
-                            config.simParams.presetA_loc.append(locationA)
-                        self.SimEnviornment.addA(Aknoght / self.SimEnviornment.locationStep, locationA)
-                    if rand2 < muadj:
-                        locationB = random.randint(0, self.SimEnviornment.length-1)
-                        if config.simParams.presetSave:
-                            config.simParams.presetB_time.append(i)
-                            config.simParams.presetB_loc.append(locationB)
-                        self.SimEnviornment.addB(Aknoght/self.SimEnviornment.locationStep, locationB)
-                else:
-                    if i in config.simParams.presetA_time:
-                        loc = int(config.simParams.presetA_loc[config.simParams.presetA_time.index(i)])
-                        self.SimEnviornment.addA(Aknoght / self.SimEnviornment.locationStep, loc)
-                    if i in config.simParams.presetB_time:
-                        loc = int(config.simParams.presetB_loc[config.simParams.presetB_time.index(i)])
-                        self.SimEnviornment.addB(Aknoght / self.SimEnviornment.locationStep, loc)
-                #run degradation
-                degradeCoe = gamma * self.SimEnviornment.timeStep
-                for j in range(len(self.SimEnviornment.Aconcentrations)):
-                    self.SimEnviornment.Aconcentrations[j] = self.SimEnviornment.Aconcentrations[j]*(1-degradeCoe)
-                    self.SimEnviornment.Bconcentrations[j] = self.SimEnviornment.Bconcentrations[j]*(1-degradeCoe)
-                self.SimEnviornment.runConcentrationAdjusted()
-                """""
 
             if config.outputFlags.concProfile:
                 enviornmentConcs.append([])
@@ -786,6 +755,7 @@ class simulation(object):
         if config.outputFlags.concProfile:
             enviornmentConcsFile = utils.saveDataDate(run, date, "enviornmentConcs", enviornmentConcs, config.runOutputFlags.compressSave, config.runStats.saveDir)
 
+        l.log("Cells Alive at the end: " + str(self.SimEnviornment.cellsAlive()))
         if self.SimEnviornment.cellsAlive() < 100:
             l.log("Warning: less than 100 cells alive at the end")
         config_path = config.writeConfig(config.runStats.saveDir + "/" + date + "/" + run + "/config.cfg")
