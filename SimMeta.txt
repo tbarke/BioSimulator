@@ -8,7 +8,6 @@ givenDate = 2023-04-11
 calculateResults = True
 #calc = 0: 'Traditional MI Calculation', 1: 'New Syntactic Caclulation', 2: 'New Useful Calculation',3: 'New Useful Input Calculation', 4: 'Growth Calculation', 5: 'New Internal Weighted Calculation'}
 calculation_parameters = [True, True, True, True, True, True, True]
-#calculation_parameters = [False, False, False, False, False, False, True]
 config_file = Configs/vonMisesLargeDissIdentical_05-05-23.cfg
 mfhConcProfile = None
 mfhConcFlag = False
